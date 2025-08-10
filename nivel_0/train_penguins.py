@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-"""
-Entrenamiento con palmerpenguins: procesamiento + modelo.
-
-Uso:
-    python train_penguins.py --model rf --cv 5 --test-size 0.2 --outdir artifacts
-"""
 from __future__ import annotations
 import argparse, os, json
 import numpy as np

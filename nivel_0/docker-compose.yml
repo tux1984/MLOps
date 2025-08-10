@@ -1,0 +1,19 @@
+# docker-compose.yml
+services:
+  penguins-api:
+    build: .
+    image: penguins-api:latest
+    container_name: penguins-api
+    ports:
+      - "8000:8000"
+    environment:
+      # Cambia el modelo por defecto si quieres
+      - DEFAULT_MODEL=rf
+      # Si cambias nombres de carpetas, actualiza estas env vars
+      - RF_DIR=/app/artifacts_rf
+      - LOGREG_DIR=/app/artifacts_logreg
+    volumes:
+      # Monta tus artefactos entrenados
+      - ./artifacts_rf:/app/artifacts_rf:ro
+      - ./artifacts_logreg:/app/artifacts_logreg:ro
+    restart: unless-stopped

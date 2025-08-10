@@ -10,8 +10,6 @@ from pydantic import BaseModel, Field
 from joblib import load
 
 # === Config ===
-# Puedes cambiar dirs por variables de entorno:
-#   RF_DIR, LOGREG_DIR, DEFAULT_MODEL
 MODELS_CONFIG = {
     "rf": os.getenv("RF_DIR", "artifacts_rf"),
     "logreg": os.getenv("LOGREG_DIR", "artifacts_logreg"),
