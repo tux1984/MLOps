@@ -1,0 +1,24 @@
+# Archivos compilados de Python
+__pycache__/
+*.py[cod]
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+
+# Archivos de configuración locales
+*.env
+
+# Archivos temporales
+*.log
+
+# Cachés y reportes de pruebas
+.pytest_cache/
+.coverage
+*.cover
+
+# Archivos generados por herramientas
+dist/
+build/
+*.egg-info/
