@@ -1,0 +1,18 @@
+# FastAPI y servidor
+fastapi==0.112.1
+uvicorn[standard]==0.30.5
+
+# Machine Learning y datos
+scikit-learn==1.7
+pandas==2.2.2
+numpy==1.26.4
+joblib==1.4.2
+
+# Validación de datos
+pydantic==2.8.2
+
+# Dataset de ejemplo
+palmerpenguins==0.1.4
+
+# Necesario para palmerpenguins (pkg_resources)
+setuptools>=70.0.0
