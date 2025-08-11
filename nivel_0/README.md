@@ -55,28 +55,11 @@ Sigue estos pasos para desplegar y probar la API de clasificación de pingüinos
    ```bash
    docker-compose up --build
    ```
-   Esto levantará la API en http://localhost:8000
+   Esto levantará la API en http://localhost:8989
 
 5. **Explora la documentación interactiva:**
-   - Abre [http://localhost:8000/docs](http://localhost:8000/docs) para probar los endpoints y ver los modelos cargados.
-
----
-
-## Índice
-1. [Quick Start](#quick-start)
-2. [Arquitectura y flujo](#arquitectura-y-flujo)
-3. [Dataset](#dataset)
-4. [Requisitos e instalación](#requisitos-e-instalación)
-5. [Entrenamiento (`train_penguins.py`)](#entrenamiento-train_penguinspy)
-6. [Preprocesamiento](#preprocesamiento)
-7. [Modelos y búsqueda de hiperparámetros](#modelos-y-búsqueda-de-hiperparámetros)
-8. [Métricas y evaluación](#métricas-y-evaluación)
-9. [Artefactos generados](#artefactos-generados)
-10. [API (FastAPI) — Modo multi‑modelo](#api-fastapi--modo-multi-modelo)
-11. [Cómo probar en /docs y ejemplos de uso](#cómo-probar-en-docs-y-ejemplos-de-uso)
-12. [Variables de entorno](#variables-de-entorno)
-13. [Estructura sugerida del repositorio](#estructura-sugerida-del-repositorio)
-14. [Solución de problemas](#solución-de-problemas)
+   - Abre [http://localhost:8989/docs](http://localhost:8989/docs) para probar los endpoints y ver los modelos cargados.
+  
 
 ---
 
@@ -184,7 +167,7 @@ La API puede cargar **varios modelos** a la vez y te permite **elegir** cuál us
 
 ### Ejecutar manualmente (sin Docker Compose)
 ```bash
-uvicorn api:app --reload --host 0.0.0.0 --port 8000
+uvicorn api:app --reload --host 0.0.0.0 --port 8989
 ```
 
 ### Endpoints principales y cómo llenarlos
@@ -247,7 +230,7 @@ uvicorn api:app --reload --host 0.0.0.0 --port 8000
 
 ## Cómo probar en /docs y ejemplos de uso
 
-Puedes probar todos los endpoints de la API de forma interactiva en [http://localhost:8000/docs](http://localhost:8000/docs):
+Puedes probar todos los endpoints de la API de forma interactiva en [http://localhost:8989/docs](http://localhost:8989/docs):
 
 1. Abre la URL en tu navegador.
 2. Selecciona el endpoint que deseas probar.
@@ -257,21 +240,21 @@ Puedes probar todos los endpoints de la API de forma interactiva en [http://loca
 
 **Ejemplo de uso para `/predict` (modelo por query param):**
 ```bash
-curl -X POST "http://localhost:8000/predict?model=rf" \
+curl -X POST "http://localhost:8989/predict?model=rf" \
   -H "Content-Type: application/json" \
   -d '{"records":[{"bill_length_mm":45.1,"bill_depth_mm":17.0,"flipper_length_mm":200,"body_mass_g":4200,"island":"Biscoe","sex":"male"}]}'
 ```
 
 **Ejemplo de uso para `/predict` (modelo en el body):**
 ```bash
-curl -X POST "http://localhost:8000/predict" \
+curl -X POST "http://localhost:8989/predict" \
   -H "Content-Type: application/json" \
   -d '{"model":"logreg","records":[{"bill_length_mm":45.1,"bill_depth_mm":17.0,"flipper_length_mm":200,"body_mass_g":4200,"island":"Biscoe","sex":"male"}]}'
 ```
 
 **Ejemplo de uso para `/predict/compare`:**
 ```bash
-curl -X POST "http://localhost:8000/predict/compare" \
+curl -X POST "http://localhost:8989/predict/compare" \
   -H "Content-Type: application/json" \
   -d '{"records":[{"bill_length_mm":45.1,"bill_depth_mm":17.0,"flipper_length_mm":200,"body_mass_g":4200,"island":"Biscoe","sex":"male"}]}'
 ```
