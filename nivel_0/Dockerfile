@@ -27,11 +27,11 @@ ENV RF_DIR="artifacts_rf" \
     DEFAULT_MODEL="rf"
 
 # Exponemos el puerto de Uvicorn
-EXPOSE 8000
+EXPOSE 8989
 
 # Creamos usuario no root por seguridad
 RUN useradd -m appuser && chown -R appuser:appuser /app
 USER appuser
 
 # Comando por defecto: levanta la API
-CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8989"]
