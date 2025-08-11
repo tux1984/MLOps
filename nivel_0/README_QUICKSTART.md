@@ -92,6 +92,7 @@ Matriz de confusión (Test):
 
 ---
 
+
 # Documentación de la API
 
 La API (FastAPI) permite cargar y comparar varios modelos. Accede a la documentación interactiva en `/docs`.
@@ -105,12 +106,26 @@ La API (FastAPI) permite cargar y comparar varios modelos. Accede a la documenta
   Lista los modelos disponibles y sus métricas principales.
 
 - `GET /model/schema?model=rf|logreg`  
-  Devuelve el esquema de entrada esperado para el modelo indicado.
+  Devuelve el esquema de entrada esperado para el modelo indicado. Si omites el parámetro `model`, se usa el modelo por defecto.
+  
+  **Valores válidos para `model`:**
+  - `rf` para Random Forest
+  - `logreg` para Regresión Logística
 
 - `POST /predict?model=rf|logreg`  
-  Realiza una predicción con el modelo seleccionado. Puedes elegir el modelo por query param o en el body.
+  Realiza una predicción con el modelo seleccionado. Puedes elegir el modelo por query param (`model=rf` o `model=logreg`) o en el body.
   
-  **Ejemplo de body:**
+  **Campos esperados en el body:**
+  - `model` (opcional): `rf` o `logreg` (si no se indica, se usa el modelo por defecto)
+  - `records`: lista de objetos con los siguientes campos:
+    - `bill_length_mm` (número, obligatorio): longitud del pico en milímetros (ej: 45.1)
+    - `bill_depth_mm` (número, obligatorio): profundidad del pico en milímetros (ej: 17.0)
+    - `flipper_length_mm` (número, obligatorio): longitud de la aleta en milímetros (ej: 200)
+    - `body_mass_g` (número, obligatorio): masa corporal en gramos (ej: 4200)
+    - `island` (string, obligatorio): una de `Biscoe`, `Dream`, `Torgersen`
+    - `sex` (string, obligatorio): `male` o `female` (puede ser nulo o desconocido, pero se recomienda uno de estos valores)
+
+  **Ejemplo de body válido:**
   ```json
   {
     "model": "logreg",
@@ -127,8 +142,13 @@ La API (FastAPI) permite cargar y comparar varios modelos. Accede a la documenta
   }
   ```
 
+  > **Notas:**
+  > - Todos los campos numéricos deben ser enviados como números, no strings.
+  > - Si se envía una categoría desconocida en `island` o `sex`, el modelo la ignorará (no falla, pero puede afectar la predicción).
+  > - Si falta algún campo obligatorio, la API devolverá un error de validación.
+
 - `POST /predict/compare`  
-  Ejecuta todos los modelos cargados con los mismos registros y devuelve los resultados por modelo.
+  Ejecuta todos los modelos cargados con los mismos registros y devuelve los resultados por modelo. El formato del body es igual al de `/predict` (ver arriba).
 
 ## Cómo probar en `/docs`
 
