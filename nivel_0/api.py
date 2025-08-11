@@ -1,7 +1,7 @@
 # api.py (multi-modelo)
 from __future__ import annotations
 import os, json
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Literal
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
@@ -30,12 +30,12 @@ app.add_middleware(
 
 # === Pydantic ===
 class PenguinIn(BaseModel):
-    bill_length_mm: Optional[float] = Field(None)
-    bill_depth_mm: Optional[float] = Field(None)
-    flipper_length_mm: Optional[float] = Field(None)
-    body_mass_g: Optional[float] = Field(None)
-    island: Optional[str] = Field(None)
-    sex: Optional[str] = Field(None)
+    bill_length_mm: float = Field(..., gt=0, description="Bill length (mm)", examples=[39.1])
+    bill_depth_mm: float = Field(..., gt=0, description="Bill depth (mm)", examples=[18.7])
+    flipper_length_mm: float = Field(..., gt=0, description="Flipper length (mm)", examples=[181])
+    body_mass_g: float = Field(..., gt=0, description="Body mass (g)", examples=[3750])
+    island: Literal["Biscoe", "Dream", "Torgersen"] = Field(..., description="Island", examples=["Biscoe"])
+    sex: Literal["male", "female"] = Field(..., description="Sex", examples=["male"])
 
 class PredictRequest(BaseModel):
     records: List[PenguinIn]
