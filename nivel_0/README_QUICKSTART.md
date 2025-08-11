@@ -57,6 +57,7 @@ Sigue estos pasos para desplegar y probar la API de clasificación de pingüinos
 
 ---
 
+
 # Modelos y Entrenamiento
 
 - **RandomForestClassifier (`rf`)**:  
@@ -71,6 +72,23 @@ Cada carpeta de artefactos (`artifacts_rf/`, `artifacts_logreg/`) contiene:
 - `penguins_model.joblib` → Pipeline completo (preprocesamiento + mejor modelo).
 - `metrics.json` → métricas de CV/Test y mejores hiperparámetros.
 - `schema.json` → columnas esperadas, target y ejemplo.
+
+---
+
+# Métricas y Evaluación
+
+- **Accuracy** global, **reporte de clasificación** (precision/recall/F1 por clase) y **matriz de confusión**.
+- Ejemplo real (puede variar):
+  - Mejor configuración RF: `{'clf__max_depth': None, 'clf__min_samples_split': 2, 'clf__n_estimators': 800}`
+  - Mejor CV accuracy RF: `0.9855`
+  - Test accuracy RF: `1.0000`
+
+Matriz de confusión (Test):
+```
+[[30  0  0]
+ [ 0 14  0]
+ [ 0  0 25]]
+```
 
 ---
 
