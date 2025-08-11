@@ -5,7 +5,7 @@ services:
     image: penguins-api:latest
     container_name: penguins-api
     ports:
-      - "8000:8000"
+      - "8989:8989"
     environment:
       # Cambia el modelo por defecto si quieres
       - DEFAULT_MODEL=rf
