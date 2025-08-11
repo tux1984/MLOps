@@ -1,23 +1,65 @@
+
+
 # Clasificación de pingüinos con palmerpenguins (Entrenamiento + API)
 
-Proyecto end-to-end: **descarga de datos**, **procesamiento**, **entrenamiento con validación** y **serving** mediante **FastAPI**. Ahora con **modo multi‑modelo** para cargar varios clasificadores (p.ej., Random Forest y Regresión Logística) y elegir/compare en tiempo de ejecución.
+Proyecto end-to-end: **descarga de datos**, **procesamiento**, **entrenamiento con validación** y **serving** mediante **FastAPI** y despliegue local con **Docker**, con **modo multi‑modelo** para cargar varios clasificadores (p.ej., Random Forest y Regresión Logística) y elegir/compare en tiempo de ejecución.
 
 ---
 
 ## Índice
-1. [Arquitectura y flujo](#arquitectura-y-flujo)
-2. [Dataset](#dataset)
-3. [Requisitos e instalación](#requisitos-e-instalación)
-4. [Entrenamiento (`train_penguins.py`)](#entrenamiento-train_penguinspy)
-5. [Preprocesamiento](#preprocesamiento)
-6. [Modelos y búsqueda de hiperparámetros](#modelos-y-búsqueda-de-hiperparámetros)
-7. [Métricas y evaluación](#métricas-y-evaluación)
-8. [Artefactos generados](#artefactos-generados)
-9. [API (FastAPI) — Modo multi‑modelo](#api-fastapi--modo-multi-modelo)
-10. [Ejemplos de uso](#ejemplos-de-uso)
-11. [Variables de entorno](#variables-de-entorno)
-12. [Estructura sugerida del repositorio](#estructura-sugerida-del-repositorio)
-13. [Solución de problemas](#solución-de-problemas)
+1. [Quick Start](#quick-start)
+2. [Arquitectura y flujo](#arquitectura-y-flujo)
+3. [Dataset](#dataset)
+4. [Requisitos e instalación](#requisitos-e-instalación)
+5. [Entrenamiento (`train_penguins.py`)](#entrenamiento-train_penguinspy)
+6. [Preprocesamiento](#preprocesamiento)
+7. [Modelos y búsqueda de hiperparámetros](#modelos-y-búsqueda-de-hiperparámetros)
+8. [Métricas y evaluación](#métricas-y-evaluación)
+9. [Artefactos generados](#artefactos-generados)
+10. [API (FastAPI) — Modo multi‑modelo](#api-fastapi--modo-multi-modelo)
+11. [Cómo probar en /docs y ejemplos de uso](#cómo-probar-en-docs-y-ejemplos-de-uso)
+12. [Variables de entorno](#variables-de-entorno)
+13. [Estructura sugerida del repositorio](#estructura-sugerida-del-repositorio)
+14. [Solución de problemas](#solución-de-problemas)
+
+---
+
+# Quick Start
+
+Sigue estos pasos para desplegar y probar la API de clasificación de pingüinos localmente usando Docker:
+
+1. **Clona el repositorio:**
+   ```bash
+   git clone <URL_DEL_REPO>
+   cd MLOps/nivel_0
+   ```
+
+2. **(Opcional) Crea un ambiente virtual e instala dependencias:**
+   ```bash
+   python -m venv .venv
+   .venv\Scripts\activate  # En Windows
+   pip install -r requirements.txt
+   ```
+
+3. **Entrena los modelos:**
+   - Random Forest:
+     ```bash
+     python train_penguins.py --model rf --cv 5 --test-size 0.2 --outdir artifacts_rf
+     ```
+   - Regresión Logística:
+     ```bash
+     python train_penguins.py --model logreg --cv 5 --test-size 0.2 --outdir artifacts_logreg
+     ```
+
+4. **Despliega la API con Docker Compose:**
+   ```bash
+   docker-compose up --build
+   ```
+   Esto levantará la API en http://localhost:8989
+
+5. **Explora la documentación interactiva:**
+   - Abre [http://localhost:8989/docs](http://localhost:8989/docs) para probar los endpoints y ver los modelos cargados.
+  
 
 ---
 
@@ -118,16 +160,17 @@ Cada carpeta `outdir` (p. ej., `artifacts_rf/`, `artifacts_logreg/`) contiene:
 
 ---
 
+
 ## API (FastAPI) — Modo multi‑modelo
 
-La API puede cargar **varios modelos** a la vez y te deja **elegir** cuál usar por request, o **compararlos** lado a lado.
+La API puede cargar **varios modelos** a la vez y te permite **elegir** cuál usar por request, o **compararlos** lado a lado.
 
-### Ejecutar
+### Ejecutar manualmente (sin Docker Compose)
 ```bash
-uvicorn api:app --reload --host 0.0.0.0 --port 8000
+uvicorn api:app --reload --host 0.0.0.0 --port 8989
 ```
 
-### Endpoints
+### Endpoints principales y cómo llenarlos
 
 - `GET /healthz`  
   *Health check.* Indica modelos cargados y modelo por defecto.
@@ -136,12 +179,26 @@ uvicorn api:app --reload --host 0.0.0.0 --port 8000
   Lista los modelos cargados, clases y (si están) métricas clave (`test_accuracy`, `cv_best_score`, `cv_best_params`).
 
 - `GET /model/schema?model=rf|logreg`  
-  Devuelve el `schema.json` del modelo indicado (útil para formularios y validación del cliente).  
-  Si omites `model`, usa el **default**.
+  Devuelve el `schema.json` del modelo indicado (útil para formularios y validación del cliente). Si omites `model`, usa el **default**.
+  
+  **Valores válidos para `model`:**
+  - `rf` para Random Forest
+  - `logreg` para Regresión Logística
 
 - `POST /predict?model=rf|logreg`  
-  Predice con el modelo elegido. El `model` también puede ir en el body.  
-  **Entrada (JSON):**
+  Predice con el modelo elegido. El `model` también puede ir en el body.
+  
+  **Campos esperados en el body:**
+  - `model` (opcional): `rf` o `logreg` (si no se indica, se usa el modelo por defecto)
+  - `records`: lista de objetos con los siguientes campos:
+    - `bill_length_mm` (número, obligatorio): longitud del pico en milímetros (ej: 45.1)
+    - `bill_depth_mm` (número, obligatorio): profundidad del pico en milímetros (ej: 17.0)
+    - `flipper_length_mm` (número, obligatorio): longitud de la aleta en milímetros (ej: 200)
+    - `body_mass_g` (número, obligatorio): masa corporal en gramos (ej: 4200)
+    - `island` (string, obligatorio): una de `Biscoe`, `Dream`, `Torgersen`
+    - `sex` (string, obligatorio): `male` o `female` (puede ser nulo o desconocido, pero se recomienda uno de estos valores)
+
+  **Ejemplo de body válido:**
   ```json
   {
     "model": "logreg",
@@ -157,54 +214,52 @@ uvicorn api:app --reload --host 0.0.0.0 --port 8000
     ]
   }
   ```
-  **Salida (JSON):**
-  ```json
-  {
-    "model": "logreg",
-    "predictions": ["Gentoo"],
-    "probabilities": [{"Adelie": 0.01, "Chinstrap": 0.02, "Gentoo": 0.97}],
-    "classes": ["Adelie","Chinstrap","Gentoo"]
-  }
-  ```
+
+  > **Notas:**
+  > - Todos los campos numéricos deben ser enviados como números, no strings.
+  > - Si se envía una categoría desconocida en `island` o `sex`, el modelo la ignorará (no falla, pero puede afectar la predicción).
+  > - Si falta algún campo obligatorio, la API devolverá un error de validación.
 
 - `POST /predict/compare`  
-  Ejecuta **todos los modelos cargados** con los mismos registros y devuelve resultados por modelo.
-  **Salida (resumen):**
-  ```json
-  {
-    "results": {
-      "rf": { "model": "rf", "predictions": ["Gentoo"], "probabilities": [...], "classes": [...] },
-      "logreg": { "model": "logreg", "predictions": ["Gentoo"], "probabilities": [...], "classes": [...] }
-    }
-  }
-  ```
+  Ejecuta **todos los modelos cargados** con los mismos registros y devuelve resultados por modelo. El formato del body es igual al de `/predict` (ver arriba).
 
-> **Formato de entrada:** actualmente `/predict` y `/predict/compare` reciben **JSON** (no Excel/CSV). Si necesitas subir archivos, añade un endpoint específico para `UploadFile` y usa `pandas.read_csv`/`read_excel`.
+**Formato de entrada:** actualmente `/predict` y `/predict/compare` reciben **JSON** (no Excel/CSV). Si necesitas subir archivos, añade un endpoint específico para `UploadFile` y usa `pandas.read_csv`/`read_excel`.
 
 ---
 
-## Ejemplos de uso
 
-**Elegir modelo por query param**
+## Cómo probar en /docs y ejemplos de uso
+
+Puedes probar todos los endpoints de la API de forma interactiva en [http://localhost:8989/docs](http://localhost:8989/docs):
+
+1. Abre la URL en tu navegador.
+2. Selecciona el endpoint que deseas probar.
+3. Haz clic en "Try it out".
+4. Completa el body de ejemplo (ver abajo) y ejecuta la petición.
+5. Revisa la respuesta y las probabilidades por clase.
+
+**Ejemplo de uso para `/predict` (modelo por query param):**
 ```bash
-curl -X POST "http://localhost:8000/predict?model=rf" \
+curl -X POST "http://localhost:8989/predict?model=rf" \
   -H "Content-Type: application/json" \
   -d '{"records":[{"bill_length_mm":45.1,"bill_depth_mm":17.0,"flipper_length_mm":200,"body_mass_g":4200,"island":"Biscoe","sex":"male"}]}'
 ```
 
-**Elegir modelo en el body**
+**Ejemplo de uso para `/predict` (modelo en el body):**
 ```bash
-curl -X POST "http://localhost:8000/predict" \
+curl -X POST "http://localhost:8989/predict" \
   -H "Content-Type: application/json" \
   -d '{"model":"logreg","records":[{"bill_length_mm":45.1,"bill_depth_mm":17.0,"flipper_length_mm":200,"body_mass_g":4200,"island":"Biscoe","sex":"male"}]}'
 ```
 
-**Comparar todos los modelos cargados**
+**Ejemplo de uso para `/predict/compare`:**
 ```bash
-curl -X POST "http://localhost:8000/predict/compare" \
+curl -X POST "http://localhost:8989/predict/compare" \
   -H "Content-Type: application/json" \
   -d '{"records":[{"bill_length_mm":45.1,"bill_depth_mm":17.0,"flipper_length_mm":200,"body_mass_g":4200,"island":"Biscoe","sex":"male"}]}'
 ```
+
+Recuerda que puedes copiar y pegar estos ejemplos en la sección interactiva de `/docs` para probar la API fácilmente.
 
 ---
 
