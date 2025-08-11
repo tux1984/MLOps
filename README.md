@@ -6,9 +6,9 @@ Este repositorio ha sido creado para llevar los ejercicios e información import
 
 A continuación se listan los integrantes del equipo:
 
-- *Integrante 1 (Por definir)*
-- *Integrante 2 (Por definir)*
-- *Integrante 3 (Por definir)*
+- *Daniel Rios*
+- *Miguel Granados*
+- *Sebastian Fanchi*
 
 ## Estructura del Repositorio
 
