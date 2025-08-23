@@ -1,0 +1,24 @@
+services:
+  jupyterlab:
+    build:
+      context: ./docker/jupyter
+    container_name: jupyterlab
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/home/jovyan/work
+      - ./models:/shared/models
+      - ./data:/data
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+    command: jupyter lab --ip=0.0.0.0 --no-browser --allow-root --NotebookApp.token=''
+
+  fastapi:
+    build:
+      context: ./api
+    container_name: fastapi
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/shared/models
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
