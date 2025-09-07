@@ -1,0 +1,13 @@
+[2025-09-07T14:19:07.340+0000] {taskinstance.py:1125} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: penguins_ingest.ingest_penguins scheduled__2025-09-07T14:10:39.388688+00:00 [queued]>
+[2025-09-07T14:19:07.351+0000] {taskinstance.py:1125} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: penguins_ingest.ingest_penguins scheduled__2025-09-07T14:10:39.388688+00:00 [queued]>
+[2025-09-07T14:19:07.351+0000] {taskinstance.py:1331} INFO - Starting attempt 1 of 1
+[2025-09-07T14:19:07.365+0000] {taskinstance.py:1350} INFO - Executing <Task(PythonOperator): ingest_penguins> on 2025-09-07 14:10:39.388688+00:00
+[2025-09-07T14:19:07.367+0000] {standard_task_runner.py:57} INFO - Started process 580 to run task
+[2025-09-07T14:19:07.371+0000] {standard_task_runner.py:84} INFO - Running: ['***', 'tasks', 'run', 'penguins_ingest', 'ingest_penguins', 'scheduled__2025-09-07T14:10:39.388688+00:00', '--job-id', '40', '--raw', '--subdir', 'DAGS_FOLDER/penguins_ingest.py', '--cfg-path', '/tmp/tmpnybx7qev']
+[2025-09-07T14:19:07.372+0000] {standard_task_runner.py:85} INFO - Job 40: Subtask ingest_penguins
+[2025-09-07T14:19:07.407+0000] {task_command.py:410} INFO - Running <TaskInstance: penguins_ingest.ingest_penguins scheduled__2025-09-07T14:10:39.388688+00:00 [running]> on host 7ba635ae9347
+[2025-09-07T14:19:07.470+0000] {taskinstance.py:1570} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='penguins_ingest' AIRFLOW_CTX_TASK_ID='ingest_penguins' AIRFLOW_CTX_EXECUTION_DATE='2025-09-07T14:10:39.388688+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2025-09-07T14:10:39.388688+00:00'
+[2025-09-07T14:19:08.055+0000] {python.py:183} INFO - Done. Returned value was: None
+[2025-09-07T14:19:08.061+0000] {taskinstance.py:1373} INFO - Marking task as SUCCESS. dag_id=penguins_ingest, task_id=ingest_penguins, execution_date=20250907T141039, start_date=20250907T141907, end_date=20250907T141908
+[2025-09-07T14:19:08.086+0000] {local_task_job_runner.py:232} INFO - Task exited with return code 0
+[2025-09-07T14:19:08.097+0000] {taskinstance.py:2674} INFO - 0 downstream tasks scheduled from follow-on schedule check

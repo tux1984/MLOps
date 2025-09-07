@@ -1,0 +1,250 @@
+[2025-09-07T15:11:20.020+0000] {taskinstance.py:1125} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: penguins_train.train_penguins_models scheduled__2025-09-07T15:06:16.011952+00:00 [queued]>
+[2025-09-07T15:11:20.024+0000] {taskinstance.py:1125} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: penguins_train.train_penguins_models scheduled__2025-09-07T15:06:16.011952+00:00 [queued]>
+[2025-09-07T15:11:20.024+0000] {taskinstance.py:1331} INFO - Starting attempt 1 of 1
+[2025-09-07T15:11:20.031+0000] {taskinstance.py:1350} INFO - Executing <Task(PythonOperator): train_penguins_models> on 2025-09-07 15:06:16.011952+00:00
+[2025-09-07T15:11:20.034+0000] {standard_task_runner.py:57} INFO - Started process 98 to run task
+[2025-09-07T15:11:20.039+0000] {standard_task_runner.py:84} INFO - Running: ['***', 'tasks', 'run', 'penguins_train', 'train_penguins_models', 'scheduled__2025-09-07T15:06:16.011952+00:00', '--job-id', '200', '--raw', '--subdir', 'DAGS_FOLDER/penguins_train.py', '--cfg-path', '/tmp/tmprnqyvodi']
+[2025-09-07T15:11:20.039+0000] {standard_task_runner.py:85} INFO - Job 200: Subtask train_penguins_models
+[2025-09-07T15:11:20.075+0000] {task_command.py:410} INFO - Running <TaskInstance: penguins_train.train_penguins_models scheduled__2025-09-07T15:06:16.011952+00:00 [running]> on host 5f3a6a7bac78
+[2025-09-07T15:11:20.114+0000] {taskinstance.py:1570} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='penguins_train' AIRFLOW_CTX_TASK_ID='train_penguins_models' AIRFLOW_CTX_EXECUTION_DATE='2025-09-07T15:06:16.011952+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2025-09-07T15:06:16.011952+00:00'
+[2025-09-07T15:11:21.049+0000] {logging_mixin.py:149} INFO - 
+Entrenando modelo: logistic_regression
+[2025-09-07T15:11:21.050+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.068+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.077+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.142+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/linear_model/_logistic.py:818: ConvergenceWarning: lbfgs failed to converge (status=1):
+STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+Please also refer to the documentation for alternative solver options:
+    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression
+  extra_warning_msg=_LOGISTIC_SOLVER_CONVERGENCE_MSG,
+
+[2025-09-07T15:11:21.142+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.143+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.158+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.159+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.185+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.186+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.248+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/linear_model/_logistic.py:818: ConvergenceWarning: lbfgs failed to converge (status=1):
+STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+Please also refer to the documentation for alternative solver options:
+    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression
+  extra_warning_msg=_LOGISTIC_SOLVER_CONVERGENCE_MSG,
+
+[2025-09-07T15:11:21.248+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.250+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.306+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.308+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.330+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.332+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.350+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.351+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.384+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.385+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.403+0000] {logging_mixin.py:149} INFO - Mejor modelo para logistic_regression: {'C': 0.1}
+[2025-09-07T15:11:21.403+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.405+0000] {logging_mixin.py:149} INFO -               precision    recall  f1-score   support
+
+           0       1.00      0.97      0.98        31
+           1       0.93      1.00      0.96        13
+           2       1.00      1.00      1.00        23
+
+    accuracy                           0.99        67
+   macro avg       0.98      0.99      0.98        67
+weighted avg       0.99      0.99      0.99        67
+[2025-09-07T15:11:21.406+0000] {logging_mixin.py:149} INFO - Guardado en: /shared/models/logistic_regression.pkl
+[2025-09-07T15:11:21.406+0000] {logging_mixin.py:149} INFO - 
+Entrenando modelo: random_forest
+[2025-09-07T15:11:21.407+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.426+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.429+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.447+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.450+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.467+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.470+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.506+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.510+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.545+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.549+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.584+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.588+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.628+0000] {logging_mixin.py:149} INFO - Mejor modelo para random_forest: {'n_estimators': 100}
+[2025-09-07T15:11:21.629+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.632+0000] {logging_mixin.py:149} INFO -               precision    recall  f1-score   support
+
+           0       1.00      1.00      1.00        31
+           1       1.00      1.00      1.00        13
+           2       1.00      1.00      1.00        23
+
+    accuracy                           1.00        67
+   macro avg       1.00      1.00      1.00        67
+weighted avg       1.00      1.00      1.00        67
+[2025-09-07T15:11:21.654+0000] {logging_mixin.py:149} INFO - Guardado en: /shared/models/random_forest.pkl
+[2025-09-07T15:11:21.654+0000] {logging_mixin.py:149} INFO - 
+Entrenando modelo: svc
+[2025-09-07T15:11:21.655+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.797+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.799+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.899+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:21.901+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.139+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.140+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.143+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.144+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.146+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.147+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.149+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.150+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.260+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.261+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.446+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.449+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.601+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.607+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.611+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.612+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.615+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.616+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.620+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.621+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.740+0000] {logging_mixin.py:149} INFO - Mejor modelo para svc: {'C': 0.1, 'kernel': 'linear'}
+[2025-09-07T15:11:22.740+0000] {warnings.py:110} WARNING - /home/***/.local/lib/python3.7/site-packages/sklearn/utils/validation.py:1692: FutureWarning: Feature names only support names that are all strings. Got feature names with dtypes: ['quoted_name', 'str']. An error will be raised in 1.2.
+  FutureWarning,
+
+[2025-09-07T15:11:22.742+0000] {logging_mixin.py:149} INFO -               precision    recall  f1-score   support
+
+           0       1.00      1.00      1.00        31
+           1       1.00      1.00      1.00        13
+           2       1.00      1.00      1.00        23
+
+    accuracy                           1.00        67
+   macro avg       1.00      1.00      1.00        67
+weighted avg       1.00      1.00      1.00        67
+[2025-09-07T15:11:22.744+0000] {logging_mixin.py:149} INFO - Guardado en: /shared/models/svc.pkl
+[2025-09-07T15:11:22.744+0000] {python.py:183} INFO - Done. Returned value was: None
+[2025-09-07T15:11:22.749+0000] {taskinstance.py:1373} INFO - Marking task as SUCCESS. dag_id=penguins_train, task_id=train_penguins_models, execution_date=20250907T150616, start_date=20250907T151120, end_date=20250907T151122
+[2025-09-07T15:11:22.776+0000] {local_task_job_runner.py:232} INFO - Task exited with return code 0
+[2025-09-07T15:11:22.786+0000] {taskinstance.py:2674} INFO - 0 downstream tasks scheduled from follow-on schedule check
