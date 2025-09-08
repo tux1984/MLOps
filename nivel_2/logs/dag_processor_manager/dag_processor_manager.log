@@ -2966,3 +2966,496 @@ File Path                                   PID  Runtime      # DAGs    # Errors
 /opt/airflow/dags/penguins_train.py         100  0.00s             1           0  0.06s           2025-09-07T16:10:56
 /opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-07T16:10:56
 ================================================================================
+[2025-09-08T04:22:10.987+0000] {manager.py:487} INFO - Processing files using up to 2 processes at a time 
+[2025-09-08T04:22:10.988+0000] {manager.py:488} INFO - Process each file at most once every 30 seconds
+[2025-09-08T04:22:10.988+0000] {manager.py:490} INFO - Checking for new files in /opt/airflow/dags every 300 seconds
+[2025-09-08T04:22:10.988+0000] {manager.py:758} INFO - Searching for files in /opt/airflow/dags
+[2025-09-08T04:22:10.991+0000] {manager.py:761} INFO - There are 3 files in /opt/airflow/dags
+[2025-09-08T04:22:11.105+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  ----------
+/opt/airflow/dags/penguins_preprocess.py     73  0.02s             0           0
+/opt/airflow/dags/penguins_train.py          72  0.02s             0           0
+/opt/airflow/dags/penguins_ingest.py                               0           0
+================================================================================
+[2025-09-08T04:22:41.407+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py     87  0.00s             1           0  0.10s           2025-09-08T04:22:11
+/opt/airflow/dags/penguins_train.py          86  0.01s             1           0  0.11s           2025-09-08T04:22:11
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.07s           2025-09-08T04:22:11
+================================================================================
+[2025-09-08T04:23:11.757+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py     97  0.00s             1           0  0.10s           2025-09-08T04:22:41
+/opt/airflow/dags/penguins_train.py          96  0.01s             1           0  0.10s           2025-09-08T04:22:41
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:22:41
+================================================================================
+[2025-09-08T04:23:42.179+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    111  0.00s             1           0  0.07s           2025-09-08T04:23:11
+/opt/airflow/dags/penguins_train.py         110  0.02s             1           0  0.08s           2025-09-08T04:23:11
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:23:11
+================================================================================
+[2025-09-08T04:24:12.623+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    121  0.00s             1           0  0.10s           2025-09-08T04:23:42
+/opt/airflow/dags/penguins_train.py         120  0.02s             1           0  0.12s           2025-09-08T04:23:42
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:23:42
+================================================================================
+[2025-09-08T04:24:43.068+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    135  0.01s             1           0  0.09s           2025-09-08T04:24:12
+/opt/airflow/dags/penguins_train.py         134  0.02s             1           0  0.11s           2025-09-08T04:24:12
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:24:12
+================================================================================
+[2025-09-08T04:24:50.793+0000] {manager.py:470} INFO - Exiting gracefully upon receiving signal 15
+[2025-09-08T04:25:36.404+0000] {manager.py:487} INFO - Processing files using up to 2 processes at a time 
+[2025-09-08T04:25:36.405+0000] {manager.py:488} INFO - Process each file at most once every 30 seconds
+[2025-09-08T04:25:36.405+0000] {manager.py:490} INFO - Checking for new files in /opt/airflow/dags every 300 seconds
+[2025-09-08T04:25:36.405+0000] {manager.py:758} INFO - Searching for files in /opt/airflow/dags
+[2025-09-08T04:25:36.407+0000] {manager.py:761} INFO - There are 3 files in /opt/airflow/dags
+[2025-09-08T04:25:36.517+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  ----------
+/opt/airflow/dags/penguins_preprocess.py     81  0.02s             0           0
+/opt/airflow/dags/penguins_train.py          80  0.02s             0           0
+/opt/airflow/dags/penguins_ingest.py                               0           0
+================================================================================
+[2025-09-08T04:26:06.881+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py     95  0.00s             1           0  0.09s           2025-09-08T04:25:36
+/opt/airflow/dags/penguins_train.py          94  0.01s             1           0  0.09s           2025-09-08T04:25:36
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.07s           2025-09-08T04:25:36
+================================================================================
+[2025-09-08T04:26:37.211+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    105  0.00s             1           0  0.08s           2025-09-08T04:26:06
+/opt/airflow/dags/penguins_train.py         104  0.01s             1           0  0.09s           2025-09-08T04:26:06
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.06s           2025-09-08T04:26:07
+================================================================================
+[2025-09-08T04:27:07.625+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    115  0.00s             1           0  0.07s           2025-09-08T04:26:37
+/opt/airflow/dags/penguins_train.py         114  0.02s             1           0  0.08s           2025-09-08T04:26:37
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:26:37
+================================================================================
+[2025-09-08T04:27:38.008+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    125  0.00s             1           0  0.07s           2025-09-08T04:27:07
+/opt/airflow/dags/penguins_train.py         124  0.01s             1           0  0.09s           2025-09-08T04:27:07
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:27:07
+================================================================================
+[2025-09-08T04:28:08.397+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    142  0.00s             1           0  0.08s           2025-09-08T04:27:38
+/opt/airflow/dags/penguins_train.py         141  0.01s             1           0  0.09s           2025-09-08T04:27:38
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:27:38
+================================================================================
+[2025-09-08T04:28:38.815+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    152  0.00s             1           0  0.07s           2025-09-08T04:28:08
+/opt/airflow/dags/penguins_train.py         151  0.00s             1           0  0.08s           2025-09-08T04:28:08
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:28:08
+================================================================================
+[2025-09-08T04:29:09.168+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    162  0.00s             1           0  0.07s           2025-09-08T04:28:38
+/opt/airflow/dags/penguins_train.py         161  0.01s             1           0  0.06s           2025-09-08T04:28:38
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:28:38
+================================================================================
+[2025-09-08T04:29:39.505+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    172  0.00s             1           0  0.06s           2025-09-08T04:29:09
+/opt/airflow/dags/penguins_train.py         171  0.00s             1           0  0.07s           2025-09-08T04:29:09
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:29:09
+================================================================================
+[2025-09-08T04:30:09.899+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    182  0.00s             1           0  0.06s           2025-09-08T04:29:39
+/opt/airflow/dags/penguins_train.py         181  0.02s             1           0  0.07s           2025-09-08T04:29:39
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:29:39
+================================================================================
+[2025-09-08T04:30:11.724+0000] {manager.py:470} INFO - Exiting gracefully upon receiving signal 15
+[2025-09-08T04:30:52.205+0000] {manager.py:487} INFO - Processing files using up to 2 processes at a time 
+[2025-09-08T04:30:52.205+0000] {manager.py:488} INFO - Process each file at most once every 30 seconds
+[2025-09-08T04:30:52.205+0000] {manager.py:490} INFO - Checking for new files in /opt/airflow/dags every 300 seconds
+[2025-09-08T04:30:52.205+0000] {manager.py:758} INFO - Searching for files in /opt/airflow/dags
+[2025-09-08T04:30:52.209+0000] {manager.py:761} INFO - There are 3 files in /opt/airflow/dags
+[2025-09-08T04:30:52.353+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  ----------
+/opt/airflow/dags/penguins_preprocess.py     74  0.02s             0           0
+/opt/airflow/dags/penguins_train.py          73  0.03s             0           0
+/opt/airflow/dags/penguins_ingest.py                               0           0
+================================================================================
+[2025-09-08T04:31:22.692+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py     91  0.00s             1           0  0.12s           2025-09-08T04:30:52
+/opt/airflow/dags/penguins_train.py          90  0.01s             1           0  0.13s           2025-09-08T04:30:52
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.08s           2025-09-08T04:30:52
+================================================================================
+[2025-09-08T04:31:53.120+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    101  0.00s             1           0  0.10s           2025-09-08T04:31:22
+/opt/airflow/dags/penguins_train.py         100  0.01s             1           0  0.10s           2025-09-08T04:31:22
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:31:22
+================================================================================
+[2025-09-08T04:32:23.538+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    115  0.00s             1           0  0.07s           2025-09-08T04:31:53
+/opt/airflow/dags/penguins_train.py         114  0.01s             1           0  0.07s           2025-09-08T04:31:53
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.06s           2025-09-08T04:31:53
+================================================================================
+[2025-09-08T04:32:53.955+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    129  0.00s             1           0  0.09s           2025-09-08T04:32:23
+/opt/airflow/dags/penguins_train.py         128  0.01s             1           0  0.11s           2025-09-08T04:32:23
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:32:23
+================================================================================
+[2025-09-08T04:33:24.396+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    139  0.00s             1           0  0.08s           2025-09-08T04:32:54
+/opt/airflow/dags/penguins_train.py         138  0.01s             1           0  0.09s           2025-09-08T04:32:54
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:32:54
+================================================================================
+[2025-09-08T04:33:54.806+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    149  0.00s             1           0  0.09s           2025-09-08T04:33:24
+/opt/airflow/dags/penguins_train.py         148  0.02s             1           0  0.10s           2025-09-08T04:33:24
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.06s           2025-09-08T04:33:24
+================================================================================
+[2025-09-08T04:34:25.186+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    159  0.00s             1           0  0.08s           2025-09-08T04:33:54
+/opt/airflow/dags/penguins_train.py         158  0.01s             1           0  0.10s           2025-09-08T04:33:54
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:33:54
+================================================================================
+[2025-09-08T04:34:55.468+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    169  0.00s             1           0  0.08s           2025-09-08T04:34:25
+/opt/airflow/dags/penguins_train.py         168  0.01s             1           0  0.08s           2025-09-08T04:34:25
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:34:25
+================================================================================
+[2025-09-08T04:35:25.746+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    179  0.00s             1           0  0.08s           2025-09-08T04:34:55
+/opt/airflow/dags/penguins_train.py         178  0.01s             1           0  0.08s           2025-09-08T04:34:55
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:34:55
+================================================================================
+[2025-09-08T04:35:53.033+0000] {manager.py:758} INFO - Searching for files in /opt/airflow/dags
+[2025-09-08T04:35:53.043+0000] {manager.py:761} INFO - There are 3 files in /opt/airflow/dags
+[2025-09-08T04:35:56.078+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    189  0.00s             1           0  0.08s           2025-09-08T04:35:25
+/opt/airflow/dags/penguins_train.py         188  0.01s             1           0  0.08s           2025-09-08T04:35:25
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:35:25
+================================================================================
+[2025-09-08T04:36:26.449+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    199  0.00s             1           0  0.08s           2025-09-08T04:35:56
+/opt/airflow/dags/penguins_train.py         198  0.01s             1           0  0.08s           2025-09-08T04:35:56
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:35:56
+================================================================================
+[2025-09-08T04:36:56.823+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    209  0.00s             1           0  0.07s           2025-09-08T04:36:26
+/opt/airflow/dags/penguins_train.py         208  0.01s             1           0  0.08s           2025-09-08T04:36:26
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:36:26
+================================================================================
+[2025-09-08T04:37:27.185+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    219  0.00s             1           0  0.07s           2025-09-08T04:36:56
+/opt/airflow/dags/penguins_train.py         218  0.01s             1           0  0.08s           2025-09-08T04:36:56
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:36:56
+================================================================================
+[2025-09-08T04:37:57.585+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    229  0.00s             1           0  0.08s           2025-09-08T04:37:27
+/opt/airflow/dags/penguins_train.py         228  0.01s             1           0  0.09s           2025-09-08T04:37:27
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:37:27
+================================================================================
+[2025-09-08T04:38:27.958+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    239  0.00s             1           0  0.07s           2025-09-08T04:37:57
+/opt/airflow/dags/penguins_train.py         238  0.01s             1           0  0.08s           2025-09-08T04:37:57
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:37:57
+================================================================================
+[2025-09-08T04:38:58.348+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    249  0.00s             1           0  0.09s           2025-09-08T04:38:28
+/opt/airflow/dags/penguins_train.py         248  0.01s             1           0  0.09s           2025-09-08T04:38:28
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:38:28
+================================================================================
+[2025-09-08T04:39:28.729+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    259  0.00s             1           0  0.08s           2025-09-08T04:38:58
+/opt/airflow/dags/penguins_train.py         258  0.02s             1           0  0.09s           2025-09-08T04:38:58
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:38:58
+================================================================================
+[2025-09-08T04:39:59.038+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    269  0.00s             1           0  0.09s           2025-09-08T04:39:28
+/opt/airflow/dags/penguins_train.py         268  0.01s             1           0  0.11s           2025-09-08T04:39:28
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.05s           2025-09-08T04:39:28
+================================================================================
+[2025-09-08T04:40:29.332+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    279  0.00s             1           0  0.07s           2025-09-08T04:39:59
+/opt/airflow/dags/penguins_train.py         278  0.01s             1           0  0.07s           2025-09-08T04:39:59
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:39:59
+================================================================================
+[2025-09-08T04:40:53.570+0000] {manager.py:758} INFO - Searching for files in /opt/airflow/dags
+[2025-09-08T04:40:53.578+0000] {manager.py:761} INFO - There are 3 files in /opt/airflow/dags
+[2025-09-08T04:40:59.669+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    289  0.00s             1           0  0.06s           2025-09-08T04:40:29
+/opt/airflow/dags/penguins_train.py         288  0.01s             1           0  0.07s           2025-09-08T04:40:29
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:40:29
+================================================================================
+[2025-09-08T04:41:30.024+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    299  0.00s             1           0  0.06s           2025-09-08T04:40:59
+/opt/airflow/dags/penguins_train.py         298  0.01s             1           0  0.07s           2025-09-08T04:40:59
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:40:59
+================================================================================
+[2025-09-08T04:42:00.370+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    309  0.00s             1           0  0.06s           2025-09-08T04:41:30
+/opt/airflow/dags/penguins_train.py         308  0.01s             1           0  0.07s           2025-09-08T04:41:30
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:41:30
+================================================================================
+[2025-09-08T04:42:30.729+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    319  0.00s             1           0  0.07s           2025-09-08T04:42:00
+/opt/airflow/dags/penguins_train.py         318  0.01s             1           0  0.07s           2025-09-08T04:42:00
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:42:00
+================================================================================
+[2025-09-08T04:43:01.100+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    329  0.00s             1           0  0.07s           2025-09-08T04:42:30
+/opt/airflow/dags/penguins_train.py         328  0.01s             1           0  0.08s           2025-09-08T04:42:30
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:42:30
+================================================================================
+[2025-09-08T04:43:31.449+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    339  0.00s             1           0  0.06s           2025-09-08T04:43:01
+/opt/airflow/dags/penguins_train.py         338  0.01s             1           0  0.07s           2025-09-08T04:43:01
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:43:01
+================================================================================
+[2025-09-08T04:44:01.806+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    349  0.00s             1           0  0.07s           2025-09-08T04:43:31
+/opt/airflow/dags/penguins_train.py         348  0.01s             1           0  0.07s           2025-09-08T04:43:31
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:43:31
+================================================================================
+[2025-09-08T04:44:32.195+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    359  0.00s             1           0  0.06s           2025-09-08T04:44:01
+/opt/airflow/dags/penguins_train.py         358  0.01s             1           0  0.07s           2025-09-08T04:44:01
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:44:01
+================================================================================
+[2025-09-08T04:45:02.600+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    369  0.00s             1           0  0.06s           2025-09-08T04:44:32
+/opt/airflow/dags/penguins_train.py         368  0.01s             1           0  0.07s           2025-09-08T04:44:32
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:44:32
+================================================================================
+[2025-09-08T04:45:32.921+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    379  0.00s             1           0  0.08s           2025-09-08T04:45:02
+/opt/airflow/dags/penguins_train.py         378  0.01s             1           0  0.08s           2025-09-08T04:45:02
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:45:02
+================================================================================
+[2025-09-08T04:45:54.127+0000] {manager.py:758} INFO - Searching for files in /opt/airflow/dags
+[2025-09-08T04:45:54.130+0000] {manager.py:761} INFO - There are 3 files in /opt/airflow/dags
+[2025-09-08T04:46:03.224+0000] {manager.py:889} INFO - 
+================================================================================
+DAG File Processing Stats
+
+File Path                                   PID  Runtime      # DAGs    # Errors  Last Runtime    Last Run
+----------------------------------------  -----  ---------  --------  ----------  --------------  -------------------
+/opt/airflow/dags/penguins_preprocess.py    389  0.00s             1           0  0.07s           2025-09-08T04:45:32
+/opt/airflow/dags/penguins_train.py         388  0.01s             1           0  0.07s           2025-09-08T04:45:32
+/opt/airflow/dags/penguins_ingest.py                               1           0  0.04s           2025-09-08T04:45:33
+================================================================================
