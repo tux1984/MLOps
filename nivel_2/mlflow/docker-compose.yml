@@ -1,0 +1,123 @@
+version: '3.9'
+
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - mlflow-net
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@mlflow.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - mlflow-net
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    restart: always
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # UI
+    networks:
+      - mlflow-net
+
+  mlflow:
+    build:
+      context: ./mlflow
+    container_name: mlflow
+    restart: always
+    depends_on:
+      - postgres
+      - minio
+    environment:
+      BACKEND_URI: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      MLFLOW_S3_ENDPOINT_URL: ${MLFLOW_S3_ENDPOINT}
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    command: >
+      mlflow server
+      --backend-store-uri=$$BACKEND_URI
+      --default-artifact-root=${MLFLOW_ARTIFACT_URI}
+      --host 0.0.0.0
+      --port 5000
+      --serve-artifacts
+    networks:
+      - mlflow-net
+
+  jupyterlab:
+    build:
+      context: ./jupyterlab
+    container_name: jupyterlab
+    volumes:
+      - ./jupyterlab:/app
+      - ./data:/app/data
+      - ./scripts:/app/scripts
+    ports:
+      - "8888:8888"
+    depends_on:
+      - postgres
+      - mlflow
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+      - MLFLOW_S3_ENDPOINT_URL=${MLFLOW_S3_ENDPOINT}
+    networks:
+      - mlflow-net
+
+  api:
+    build:
+      context: ./api
+    container_name: credit_api
+    depends_on:
+      - mlflow
+    ports:
+      - "8000:8000"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MLFLOW_MODEL_NAME=CreditScoreModel
+      - MLFLOW_MODEL_STAGE=None
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+      - MLFLOW_S3_ENDPOINT_URL=${MLFLOW_S3_ENDPOINT}
+    networks:
+      - mlflow-net
+
+volumes:
+  pgdata:
+  minio_data:
+
+networks:
+  mlflow-net:
+    driver: bridge

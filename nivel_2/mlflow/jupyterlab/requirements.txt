@@ -1,0 +1,7 @@
+jupyterlab
+pandas
+scikit-learn
+sqlalchemy
+psycopg2-binary
+mlflow
+boto3
