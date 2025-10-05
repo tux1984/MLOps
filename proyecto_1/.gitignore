@@ -1,0 +1,28 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Airflow logs and temp folders
+logs/
+shared/
+/tmp/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Docker artifacts
+*.pid
+*.log
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+
+# PostgreSQL volumes (if accidentally created locally)
+postgres-db-volume/
+db_data/
