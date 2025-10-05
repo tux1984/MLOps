@@ -68,6 +68,14 @@ La tabla de destino se crea automáticamente al iniciar PostgreSQL mediante `ini
 
 Cada registro también almacena `group_number`, `batch_number`, `row_hash` (clave única) e `ingested_at`.
 
+
+## Nuevos DAGs de preprocesamiento y entrenamiento
+
+- `forest_preprocess`: cada 5 minutos toma `forest_cover_samples`, elimina nulos, codifica variables categóricas (`wilderness_area`, `soil_type`) y guarda una versión lista para modelado en la tabla `forest_cover_preprocessed`.
+- `forest_train`: cada 15 minutos lee la tabla preprocesada, normaliza los atributos y entrena tres clasificadores (Logistic Regression, Random Forest, SVC) realizando búsqueda de hiperparámetros. Los artefactos se guardan en `shared/models/forest/` como archivos `.joblib` junto con el `StandardScaler` y las columnas usadas.
+
+Para que estos DAGs funcionen, asegúrate de que el DAG de ingesta (`forest_cover_data_pipeline`) esté activo para mantener la tabla origen actualizada. Si el entorno de Airflow ya está levantado, reinicia los contenedores tras actualizar `_PIP_ADDITIONAL_REQUIREMENTS` para instalar `scikit-learn` y `seaborn`.
+
 ## Operación y pruebas
 
 - Habilita el DAG en la UI de Airflow y gatilla una ejecución manual para verificar conectividad a la API y escritura en la base.
