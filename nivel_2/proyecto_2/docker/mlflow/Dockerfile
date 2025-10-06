@@ -12,8 +12,11 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt /tmp/requirements.txt
-RUN pip install --upgrade pip \
-    && pip install -r /tmp/requirements.txt
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && mv /root/.local/bin/uv /usr/local/bin/uv
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --system -r /tmp/requirements.txt
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

@@ -305,6 +305,25 @@ services:
       - db_data:/var/lib/postgresql/data
       - ./initdb:/docker-entrypoint-initdb.d:ro
 
+  streamlit:
+    build:
+      context: services/streamlit
+      dockerfile: Dockerfile
+    image: ${STREAMLIT_IMAGE_NAME:-mlops-streamlit:latest}
+    depends_on:
+      - inference
+      - mlflow
+    environment:
+      INFERENCE_API_URL: http://inference:8000
+      MLFLOW_URL: http://mlflow:5000
+      APP_TITLE: Forest Cover Classification
+      APP_ICON: 🌲
+    ports:
+      - '8501:8501'
+    volumes:
+      - ${AIRFLOW_PROJ_DIR:-.}/shared:/shared
+    restart: unless-stopped
+
 volumes:
   postgres-db-volume:
   db_data:

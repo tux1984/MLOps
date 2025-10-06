@@ -1,6 +1,10 @@
 fastapi
 uvicorn[standard]
-mlflow[extras]
+prometheus-flask-exporter==0.22.4
+mlflow[extras]==1.30.0
 boto3
 pandas
-scikit-learn
+numpy==1.21.6
+scipy==1.7.3
+scikit-learn==1.0.2
+dill

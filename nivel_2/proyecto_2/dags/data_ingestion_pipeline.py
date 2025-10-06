@@ -303,7 +303,7 @@ def _log_summary() -> None:
 
 with DAG(
     dag_id="forest_cover_data_pipeline",
-    schedule_interval="*/3 * * * *",  # cada 3 minutos
+    schedule_interval="*/5 * * * *",  # cada 5 minutos
     start_date=pendulum.datetime(2023, 1, 1, tz="UTC"),
     catchup=False,
     default_args={"owner": "mlops", "retries": 0},

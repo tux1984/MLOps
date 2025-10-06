@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.9-slim-bullseye
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
@@ -11,8 +11,11 @@ RUN apt-get update \
 WORKDIR /app
 
 COPY requirements.txt /app/requirements.txt
-RUN pip install --upgrade pip \
-    && pip install -r /app/requirements.txt
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && mv /root/.local/bin/uv /usr/local/bin/uv
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --system -r /app/requirements.txt
 
 COPY app /app
 

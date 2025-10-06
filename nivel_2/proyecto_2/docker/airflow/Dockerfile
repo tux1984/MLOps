@@ -17,5 +17,6 @@ USER airflow
 
 ENV PATH="/home/airflow/.local/bin:${PATH}"
 
-RUN pip install --user --upgrade pip \
-    && pip install --user --no-cache-dir -r /tmp/requirements.txt
+RUN --mount=type=cache,target=/home/airflow/.cache/pip \
+    pip install --user --upgrade pip \
+    && pip install --user -r /tmp/requirements.txt

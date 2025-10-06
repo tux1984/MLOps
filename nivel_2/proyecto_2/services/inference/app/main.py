@@ -151,6 +151,18 @@ def predict(request: PredictionRequest) -> PredictionResponse:
     model = model_info["model"]
 
     data = pd.DataFrame([sample.dict() for sample in request.samples])
+    
+    # Convert numeric columns to int64 to match training data format
+    numeric_columns = [
+        "elevation", "aspect", "slope", "horizontal_distance_to_hydrology",
+        "vertical_distance_to_hydrology", "horizontal_distance_to_roadways",
+        "hillshade_9am", "hillshade_noon", "hillshade_3pm",
+        "horizontal_distance_to_fire_points"
+    ]
+    
+    for col in numeric_columns:
+        if col in data.columns:
+            data[col] = data[col].astype('int64')
 
     try:
         predictions = model.predict(data)
