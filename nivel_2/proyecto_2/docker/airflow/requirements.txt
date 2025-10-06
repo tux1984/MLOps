@@ -1,0 +1,11 @@
+apache-airflow-providers-postgres
+apache-airflow-providers-redis
+pandas
+requests
+sqlalchemy
+psycopg2-binary
+scikit-learn
+mlflow==1.30.0
+boto3
+pendulum
+pyarrow
