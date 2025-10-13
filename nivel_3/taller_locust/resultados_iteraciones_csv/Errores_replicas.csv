@@ -1,0 +1,3 @@
+Method,Name,Error,Occurrences
+GET,/health,"""ConnectionResetError(104, 'Connection reset by peer')""",172
+POST,/predict,"""ConnectionResetError(104, 'Connection reset by peer')""",123

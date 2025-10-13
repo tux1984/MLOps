@@ -1,0 +1,6 @@
+Method,Name,Error,Occurrences
+GET,/health,"""ConnectionResetError(104, 'Connection reset by peer')""",1265
+POST,/predict,"""ConnectTimeoutError(<urllib3.connection.HTTPConnection object at 0x....>, 'Connection to api timed out. (connect timeout=None)')""",26
+POST,/predict,"""ConnectionResetError(104, 'Connection reset by peer')""",2588
+POST,/predict,"""CatchResponseError('Status code: 0')""",287
+GET,/,"""ConnectionResetError(104, 'Connection reset by peer')""",35

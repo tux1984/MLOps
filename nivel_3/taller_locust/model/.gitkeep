@@ -1,0 +1,3 @@
+# Este archivo mantiene el directorio model/ en git
+# Los archivos .pkl serán ignorados por .gitignore
+

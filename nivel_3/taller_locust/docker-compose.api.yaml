@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  api:
+    image: sefanchil/ml-inference-api:latest
+    # Para usar imagen de DockerHub, reemplaza con:
+    # image: tu-usuario/ml-inference-api:latest
+    # container_name: ml-inference-api  # Comentado para permitir escalado
+    # ports:  # Comentado - usar expose para escalado
+    #   - "8000:8000"
+    expose:
+      - "8000"
+    environment:
+      - PORT=8000
+    restart: unless-stopped
+    networks:
+      - ml-network
+    
+    # Límites de recursos - AJUSTAR SEGÚN EXPERIMENTOS
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'      # Límite de CPU (ajustar según necesidad)
+          memory: 512M     # Límite de memoria (ajustar según necesidad)
+        reservations:
+          cpus: '0.25'     # CPU reservada mínima
+          memory: 256M     # Memoria reservada mínima
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # NGINX DESHABILITADO - No necesario para escalado simple
+  # Para habilitar nginx, descomenta este bloque y comenta el expose de api
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: ml-nginx
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     - api
+  #   restart: unless-stopped
+  #   networks:
+  #     - ml-network
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.25'
+  #         memory: 128M
+
+networks:
+  ml-network:
+    driver: bridge
+
+# Para escalar la API (sin Nginx):
+# docker-compose -f docker-compose.api.yaml up --scale api=2 -d
+# docker-compose -f docker-compose.api.yaml up --scale api=3 -d
+#
+# Para acceder desde otro contenedor:
+# http://api:8000
+#
+# Para ver réplicas:
+# docker ps | grep api
+# docker stats
+
