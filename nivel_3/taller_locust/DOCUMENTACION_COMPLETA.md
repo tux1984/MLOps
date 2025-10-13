@@ -168,7 +168,9 @@ make build
 
 # 7. Publicar en DockerHub (opcional)
 docker login
-make push DOCKER_USER=tu-usuario
+make push DOCKER_USER=tu-usuario 
+
+# Nota: #En nuestro caso, sería docker push sefanchil/ml-inference-api:latest haciendo previamente el tagging: docker tag ml-inference-api:latest sefanchil/ml-inference-api:latest la url donde queda la imagen es: https://hub.docker.com/repository/docker/sefanchil/ml-inference-api/general y se podría jalar nuevamente con: docker pull sefanchil/ml-inference-api:latest
 ```
 
 
@@ -636,6 +638,8 @@ make build
 # 3. Publicar en DockerHub (opcional)
 docker login
 make push DOCKER_USER=tu-usuario
+
+# Nota: #En nuestro caso, sería docker push sefanchil/ml-inference-api:latest haciendo previamente el tagging: docker tag ml-inference-api:latest sefanchil/ml-inference-api:latest la url donde queda la imagen es: https://hub.docker.com/repository/docker/sefanchil/ml-inference-api/general y se podría jalar nuevamente con: docker pull sefanchil/ml-inference-api:latest
 ```
 
 ### Ejecutar Pruebas de Carga
