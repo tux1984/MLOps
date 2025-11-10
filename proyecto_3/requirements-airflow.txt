@@ -1,0 +1,23 @@
+# Requirements para Airflow DAGs
+# Instalar en la imagen personalizada de Airflow
+
+# Data manipulation
+pandas==2.1.3
+numpy==1.24.3
+
+# HTTP requests
+requests==2.31.0
+
+# Database
+psycopg2-binary==2.9.9
+sqlalchemy==1.4.51
+
+# Machine Learning
+scikit-learn==1.3.2
+
+# MLflow
+mlflow==2.9.2
+boto3==1.34.0
+
+# Utilities
+python-dateutil==2.8.2

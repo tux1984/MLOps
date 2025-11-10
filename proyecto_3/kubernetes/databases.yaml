@@ -1,0 +1,107 @@
+# databases.yaml - PostgreSQL Deployments
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-scripts
+  namespace: mlops-diabetes
+data:
+  01_create_tables.sql: |
+    -- Ver initdb/01_create_tables.sql
+  02_add_row_hash.sql: |
+    -- Ver initdb/02_add_row_hash.sql
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-raw
+  namespace: mlops-diabetes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db-raw
+  template:
+    metadata:
+      labels:
+        app: db-raw
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        env:
+        - name: POSTGRES_DB
+          value: "rawdb"
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          value: "postgres"
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-raw-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-raw
+  namespace: mlops-diabetes
+spec:
+  selector:
+    app: db-raw
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-clean
+  namespace: mlops-diabetes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db-clean
+  template:
+    metadata:
+      labels:
+        app: db-clean
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        env:
+        - name: POSTGRES_DB
+          value: "cleandb"
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          value: "postgres"
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-clean-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-clean
+  namespace: mlops-diabetes
+spec:
+  selector:
+    app: db-clean
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP

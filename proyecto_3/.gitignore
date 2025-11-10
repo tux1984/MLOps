@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Airflow
+logs/
+airflow.db
+airflow.cfg
+webserver_config.py
+standalone_admin_password.txt
+
+# Docker
+.dockerignore
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data
+*.csv
+*.parquet
+*.pkl
+*.joblib
+data/
+shared/
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Secrets
+.env
+*.pem
+*.key
+
+# Logs
+*.log
+
+# Jupyter
+.ipynb_checkpoints/

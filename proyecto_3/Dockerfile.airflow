@@ -1,0 +1,14 @@
+FROM apache/airflow:2.7.3-python3.10
+
+# Instalar dependencias adicionales para los DAGs
+USER root
+
+# Cambiar a usuario airflow para instalar paquetes Python
+USER airflow
+
+# Copiar requirements y instalar
+COPY requirements-airflow.txt /tmp/requirements-airflow.txt
+RUN pip install --no-cache-dir -r /tmp/requirements-airflow.txt
+
+# Configurar variables de entorno
+ENV PYTHONUNBUFFERED=1
