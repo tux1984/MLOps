@@ -171,5 +171,5 @@ CREATE INDEX IF NOT EXISTS idx_preprocessing_metadata_run_id ON preprocessing_me
 CREATE INDEX IF NOT EXISTS idx_data_quality_metrics_run_id ON data_quality_metrics(preprocessing_run_id);
 
 -- Grant permissions
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO postgres;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO postgres;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO mlops;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO mlops;

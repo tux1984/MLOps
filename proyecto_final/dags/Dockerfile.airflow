@@ -13,8 +13,8 @@ RUN apt-get update && \
 USER airflow
 
 # Install Python packages
-COPY requirements.txt /requirements.txt
+COPY dags/requirements.txt /requirements.txt
 RUN pip install --no-cache-dir -r /requirements.txt
 
 # Copy DAGs
-COPY . /opt/airflow/dags/
+COPY dags/ /opt/airflow/dags/

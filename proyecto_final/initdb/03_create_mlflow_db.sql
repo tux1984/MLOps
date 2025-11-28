@@ -4,7 +4,7 @@
 -- This file is for any custom tables or initial setup
 
 -- Grant necessary permissions to mlflow user
-GRANT ALL PRIVILEGES ON DATABASE mlflow TO mlflow;
+-- Database privileges are already set via POSTGRES_USER
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO mlflow;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO mlflow;
 

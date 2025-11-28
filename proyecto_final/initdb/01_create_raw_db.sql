@@ -208,5 +208,5 @@ CREATE INDEX IF NOT EXISTS idx_batch_metadata_split ON batch_metadata(dataset_sp
 CREATE INDEX IF NOT EXISTS idx_batch_metadata_status ON batch_metadata(load_status);
 
 -- Grant permissions
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO postgres;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO postgres;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO mlops;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO mlops;
