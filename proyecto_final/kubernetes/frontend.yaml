@@ -1,0 +1,61 @@
+# TODO: Complete Kubernetes manifest for Frontend (Streamlit)
+# This is a placeholder - full implementation needed
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: mlops
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: frontend:latest  # TODO: Use actual image from registry
+        env:
+        - name: API_URL
+          value: "http://api:8000"
+        ports:
+        - containerPort: 8501
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: mlops
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 8501
+    targetPort: 8501
+  type: ClusterIP
+---
+# NodePort service for external access
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-nodeport
+  namespace: mlops
+spec:
+  selector:
+    app: frontend
+  ports:
+  - port: 8501
+    targetPort: 8501
+    nodePort: 30851
+  type: NodePort

@@ -1,0 +1,160 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mlops-api
+  namespace: argocd
+spec:
+  project: mlops-project
+  
+  source:
+    repoURL: https://github.com/tux1984/MLOps.git
+    targetRevision: HEAD
+    path: proyecto_final/kubernetes
+    helm:
+      valueFiles:
+        - values-api.yaml
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlops-final
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mlops-frontend
+  namespace: argocd
+spec:
+  project: mlops-project
+  
+  source:
+    repoURL: https://github.com/tux1984/MLOps.git
+    targetRevision: HEAD
+    path: proyecto_final/kubernetes
+    helm:
+      valueFiles:
+        - values-frontend.yaml
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlops-final
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mlops-mlflow
+  namespace: argocd
+spec:
+  project: mlops-project
+  
+  source:
+    repoURL: https://github.com/tux1984/MLOps.git
+    targetRevision: HEAD
+    path: proyecto_final/kubernetes
+    helm:
+      valueFiles:
+        - values-mlflow.yaml
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlops-final
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mlops-airflow
+  namespace: argocd
+spec:
+  project: mlops-project
+  
+  source:
+    repoURL: https://github.com/tux1984/MLOps.git
+    targetRevision: HEAD
+    path: proyecto_final/kubernetes
+    helm:
+      valueFiles:
+        - values-airflow.yaml
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlops-final
+  
+  syncPolicy:
+    automated:
+      prune: false  # Manual sync para Airflow debido a DAGs
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mlops-databases
+  namespace: argocd
+spec:
+  project: mlops-project
+  
+  source:
+    repoURL: https://github.com/tux1984/MLOps.git
+    targetRevision: HEAD
+    path: proyecto_final/kubernetes
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlops-final
+  
+  syncPolicy:
+    automated:
+      prune: false  # Proteger datos
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mlops-observability
+  namespace: argocd
+spec:
+  project: mlops-project
+  
+  source:
+    repoURL: https://github.com/tux1984/MLOps.git
+    targetRevision: HEAD
+    path: proyecto_final/kubernetes
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mlops-final
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

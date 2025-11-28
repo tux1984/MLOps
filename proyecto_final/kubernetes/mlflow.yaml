@@ -1,0 +1,62 @@
+# TODO: Complete Kubernetes manifest for MLflow
+# This is a placeholder - full implementation needed
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow
+  namespace: mlops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlflow
+  template:
+    metadata:
+      labels:
+        app: mlflow
+    spec:
+      containers:
+      - name: mlflow
+        image: mlflow:latest  # TODO: Use actual image from registry
+        env:
+        - name: MLFLOW_BACKEND_STORE_URI
+          value: "postgresql://mlflow:mlflow@postgres-mlflow:5432/mlflow"
+        - name: MLFLOW_ARTIFACT_ROOT
+          value: "s3://mlflow-artifacts/"
+        - name: AWS_ACCESS_KEY_ID
+          value: "minioadmin"
+        - name: AWS_SECRET_ACCESS_KEY
+          value: "minioadmin"
+        - name: MLFLOW_S3_ENDPOINT_URL
+          value: "http://minio:9000"
+        ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow
+  namespace: mlops
+spec:
+  selector:
+    app: mlflow
+  ports:
+  - port: 5000
+    targetPort: 5000
+  type: ClusterIP
+---
+# NodePort service for external access
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow-nodeport
+  namespace: mlops
+spec:
+  selector:
+    app: mlflow
+  ports:
+  - port: 5000
+    targetPort: 5000
+    nodePort: 30500
+  type: NodePort

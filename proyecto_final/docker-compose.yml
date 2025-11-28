@@ -1,0 +1,312 @@
+x-airflow-common: &airflow-common
+  build:
+    context: .
+    dockerfile: dags/Dockerfile.airflow
+  image: airflow-mlops:latest
+  user: "${AIRFLOW_UID:-50000}:0"
+  environment: &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: ${AIRFLOW__CORE__EXECUTOR}
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_DB_USER}:${AIRFLOW_DB_PASSWORD}@${AIRFLOW_DB_HOST}/${AIRFLOW_DB_NAME}
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY}
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: ${AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION}
+    AIRFLOW__CORE__LOAD_EXAMPLES: ${AIRFLOW__CORE__LOAD_EXAMPLES}
+    AIRFLOW__API__AUTH_BACKENDS: ${AIRFLOW__API__AUTH_BACKENDS}
+    RAW_DB_HOST: ${RAW_DB_HOST}
+    RAW_DB_PORT: ${RAW_DB_PORT}
+    RAW_DB_NAME: ${RAW_DB_NAME}
+    RAW_DB_USER: ${RAW_DB_USER}
+    RAW_DB_PASSWORD: ${RAW_DB_PASSWORD}
+    CLEAN_DB_HOST: ${CLEAN_DB_HOST}
+    CLEAN_DB_PORT: ${CLEAN_DB_PORT}
+    CLEAN_DB_NAME: ${CLEAN_DB_NAME}
+    CLEAN_DB_USER: ${CLEAN_DB_USER}
+    CLEAN_DB_PASSWORD: ${CLEAN_DB_PASSWORD}
+    MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI}
+    MLFLOW_S3_ENDPOINT_URL: ${MLFLOW_S3_ENDPOINT_URL}
+    AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+    AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+    SHARED_DIR: ${SHARED_DIR}
+    BATCH_SIZE: ${BATCH_SIZE}
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+    - shared-data:/shared
+  depends_on:
+    postgres-airflow:
+      condition: service_healthy
+    db-raw:
+      condition: service_healthy
+    db-clean:
+      condition: service_healthy
+    mlflow:
+      condition: service_started
+
+services:
+  # ==================== PostgreSQL Databases ====================
+  
+  # PostgreSQL for Raw Data
+  db-raw:
+    image: postgres:15-alpine
+    container_name: mlops-db-raw
+    environment:
+      POSTGRES_USER: ${RAW_DB_USER}
+      POSTGRES_PASSWORD: ${RAW_DB_PASSWORD}
+      POSTGRES_DB: ${RAW_DB_NAME}
+    volumes:
+      - postgres-raw-data:/var/lib/postgresql/data
+      - ./initdb/01_create_raw_db.sql:/docker-entrypoint-initdb.d/01_create_raw_db.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${RAW_DB_USER} -d ${RAW_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL for Clean Data
+  db-clean:
+    image: postgres:15-alpine
+    container_name: mlops-db-clean
+    environment:
+      POSTGRES_USER: ${CLEAN_DB_USER}
+      POSTGRES_PASSWORD: ${CLEAN_DB_PASSWORD}
+      POSTGRES_DB: ${CLEAN_DB_NAME}
+    volumes:
+      - postgres-clean-data:/var/lib/postgresql/data
+      - ./initdb/02_create_clean_db.sql:/docker-entrypoint-initdb.d/02_create_clean_db.sql
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CLEAN_DB_USER} -d ${CLEAN_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL for Airflow
+  postgres-airflow:
+    image: postgres:15-alpine
+    container_name: mlops-postgres-airflow
+    environment:
+      POSTGRES_USER: ${AIRFLOW_DB_USER}
+      POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD}
+      POSTGRES_DB: ${AIRFLOW_DB_NAME}
+    volumes:
+      - postgres-airflow-data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AIRFLOW_DB_USER} -d ${AIRFLOW_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL for MLflow
+  postgres-mlflow:
+    image: postgres:15-alpine
+    container_name: mlops-postgres-mlflow
+    environment:
+      POSTGRES_USER: ${MLFLOW_DB_USER}
+      POSTGRES_PASSWORD: ${MLFLOW_DB_PASSWORD}
+      POSTGRES_DB: ${MLFLOW_DB_NAME}
+    volumes:
+      - postgres-mlflow-data:/var/lib/postgresql/data
+      - ./initdb/03_create_mlflow_db.sql:/docker-entrypoint-initdb.d/03_create_mlflow_db.sql
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MLFLOW_DB_USER} -d ${MLFLOW_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==================== MinIO S3 Storage ====================
+  
+  minio:
+    image: minio/minio:latest
+    container_name: mlops-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio-data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # MinIO bucket creation
+  minio-create-bucket:
+    image: minio/mc:latest
+    container_name: mlops-minio-create-bucket
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      mc mb myminio/${MINIO_BUCKET} --ignore-existing;
+      mc anonymous set public myminio/${MINIO_BUCKET};
+      exit 0;
+      "
+
+  # ==================== MLflow ====================
+  
+  mlflow:
+    build:
+      context: ./services/mlflow
+      dockerfile: Dockerfile
+    container_name: mlops-mlflow
+    environment:
+      MLFLOW_BACKEND_STORE_URI: ${MLFLOW_BACKEND_STORE_URI}
+      MLFLOW_ARTIFACT_ROOT: ${MLFLOW_ARTIFACT_ROOT}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      MLFLOW_S3_ENDPOINT_URL: ${MLFLOW_S3_ENDPOINT_URL}
+    ports:
+      - "5001:5000"
+    depends_on:
+      postgres-mlflow:
+        condition: service_healthy
+      minio-create-bucket:
+        condition: service_completed_successfully
+
+  # ==================== Airflow ====================
+  
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: mlops-airflow-webserver
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: mlops-airflow-scheduler
+    command: scheduler
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: mlops-airflow-init
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        mkdir -p /sources/logs /sources/dags /sources/plugins
+        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
+        exec /entrypoint airflow version
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_MIGRATE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_ADMIN_USERNAME}
+      _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
+    user: "0:0"
+    volumes:
+      - .:/sources
+
+  # ==================== API ====================
+  
+  api:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    container_name: mlops-api
+    environment:
+      MLFLOW_TRACKING_URI: ${MLFLOW_TRACKING_URI}
+      MLFLOW_MODEL_NAME: ${MLFLOW_MODEL_NAME}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      MLFLOW_S3_ENDPOINT_URL: ${MLFLOW_S3_ENDPOINT_URL}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mlflow
+
+  # ==================== Frontend ====================
+  
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: Dockerfile
+    container_name: mlops-frontend
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+
+  # ==================== Monitoring ====================
+  
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mlops-prometheus
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mlops-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./config/grafana:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
+  # ==================== Load Testing ====================
+  
+  locust:
+    build:
+      context: ./services/locust
+      dockerfile: Dockerfile
+    container_name: mlops-locust
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "8089:8089"
+    depends_on:
+      - api
+    command: -f /locust/locustfile.py --host=http://api:8000
+
+volumes:
+  postgres-raw-data:
+  postgres-clean-data:
+  postgres-airflow-data:
+  postgres-mlflow-data:
+  minio-data:
+  prometheus-data:
+  grafana-data:
+  shared-data:
+
+networks:
+  default:
+    name: mlops-network

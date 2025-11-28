@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: mlops-project
+  namespace: argocd
+spec:
+  description: MLOps Final Project - Real Estate Price Prediction
+
+  sourceRepos:
+    - 'https://github.com/tux1984/MLOps.git'
+    - '*'
+
+  destinations:
+    - namespace: mlops-final
+      server: https://kubernetes.default.svc
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+
+  roles:
+    - name: developer
+      description: Developer access to project
+      policies:
+        - p, proj:mlops-project:developer, applications, get, mlops-project/*, allow
+        - p, proj:mlops-project:developer, applications, sync, mlops-project/*, allow
+      groups:
+        - mlops-developers
+
+    - name: admin
+      description: Admin access to project
+      policies:
+        - p, proj:mlops-project:admin, applications, *, mlops-project/*, allow
+      groups:
+        - mlops-admins

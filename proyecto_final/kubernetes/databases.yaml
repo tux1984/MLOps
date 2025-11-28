@@ -1,0 +1,70 @@
+# TODO: Complete Kubernetes manifests for all databases
+# This is a placeholder - full implementation needed
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-init-scripts
+  namespace: mlops
+data:
+  01_create_raw_db.sql: |
+    # Content from initdb/01_create_raw_db.sql
+  02_create_clean_db.sql: |
+    # Content from initdb/02_create_clean_db.sql
+  03_create_mlflow_db.sql: |
+    # Content from initdb/03_create_mlflow_db.sql
+---
+# PostgreSQL Raw DB Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-raw
+  namespace: mlops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-raw
+  template:
+    metadata:
+      labels:
+        app: postgres-raw
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          value: "postgres"
+        - name: POSTGRES_DB
+          value: "rawdb"
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: postgres-raw-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-raw
+  namespace: mlops
+spec:
+  selector:
+    app: postgres-raw
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+---
+# TODO: Add similar deployments for:
+# - postgres-clean
+# - postgres-mlflow
+# - postgres-airflow
+# - minio

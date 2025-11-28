@@ -1,0 +1,74 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# Environment variables
+.env
+.env.local
+
+# Docker
+*.log
+logs/
+*.pid
+
+# Airflow
+airflow.db
+airflow.cfg
+unittests.cfg
+webserver_config.py
+standalone_admin_password.txt
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Data files
+*.csv
+*.parquet
+*.pkl
+*.joblib
+data/
+shared/
+artifacts/
+
+# Kubernetes
+*.kubeconfig
+
+# OS
+Thumbs.db
+.Trash-*
+
+# Monitoring
+grafana/
+prometheus_data/

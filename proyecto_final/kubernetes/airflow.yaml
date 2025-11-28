@@ -1,0 +1,101 @@
+# TODO: Complete Kubernetes manifest for Airflow
+# This is a placeholder - full implementation needed
+# Consider using Airflow Helm Chart for production deployment
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: airflow-config
+  namespace: mlops
+data:
+  AIRFLOW__CORE__EXECUTOR: "LocalExecutor"
+  AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: "postgresql+psycopg2://airflow:airflow@postgres-airflow:5432/airflow"
+  MLFLOW_TRACKING_URI: "http://mlflow:5000"
+---
+# Airflow Webserver Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airflow-webserver
+  namespace: mlops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airflow-webserver
+  template:
+    metadata:
+      labels:
+        app: airflow-webserver
+    spec:
+      containers:
+      - name: webserver
+        image: airflow:latest  # TODO: Use actual image
+        command: ["airflow", "webserver"]
+        envFrom:
+        - configMapRef:
+            name: airflow-config
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: dags
+          mountPath: /opt/airflow/dags
+        - name: logs
+          mountPath: /opt/airflow/logs
+      volumes:
+      - name: dags
+        # TODO: Mount from Git or PVC
+        emptyDir: {}
+      - name: logs
+        persistentVolumeClaim:
+          claimName: airflow-logs-pvc
+---
+# Airflow Scheduler Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airflow-scheduler
+  namespace: mlops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: airflow-scheduler
+  template:
+    metadata:
+      labels:
+        app: airflow-scheduler
+    spec:
+      containers:
+      - name: scheduler
+        image: airflow:latest  # TODO: Use actual image
+        command: ["airflow", "scheduler"]
+        envFrom:
+        - configMapRef:
+            name: airflow-config
+        volumeMounts:
+        - name: dags
+          mountPath: /opt/airflow/dags
+        - name: logs
+          mountPath: /opt/airflow/logs
+      volumes:
+      - name: dags
+        emptyDir: {}
+      - name: logs
+        persistentVolumeClaim:
+          claimName: airflow-logs-pvc
+---
+# Airflow Webserver Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: airflow-webserver
+  namespace: mlops
+spec:
+  selector:
+    app: airflow-webserver
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30808
+  type: NodePort

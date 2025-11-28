@@ -1,0 +1,220 @@
+Operaciones de Machine Learning
+Proyecto Final
+Nivel 4
+Pontificia Universidad Javeriana
+Cristian Javier Diaz Alvarez
+13 de noviembre de 2025
+1. Descripci´on
+Este trabajo busca evaluar entendimiento, aplicaci´on y explicaci´on del ciclo de vida de un proyecto de aprendizaje de maquina. Se espera ver aplicados conceptos vistos en el desarrollo del curso,
+procesamiento de datos mediante pipeline completos que permitan realizar entrenamiento continuo de
+modelos. Este debe ser un proceso automatizado que permita identificar cambios en los datos que permitan de manera autom´atica realizar nuevos entrenamientos mediante el uso de un orquestador. Cada
+modelo entrenado debe ser registrado para su posible uso. El modelo que presente mejor desempe˜no
+ante las m´etricas definidas, debe ser usado en un proceso de inferencia mediante una API que estar´a
+en un contenedor, el cual su imagen debe crearse y publicarse de manera autom´atica. El objetivo es
+desplegar todas las herramientas necesarias para ejecutar el procesamiento de datos y entrenamiento de manera programada. Finalmente se espera un an´alisis del mejor modelo en cada etapa y una
+explicaci´on de a que se debe el cambio en el modelo, que cambi´o para que fuera necesario un nuevo
+entrenamiento.
+Usando AirFlow cree los DAGs que le permitan recolectar, procesar y almacenar los datos.
+Para el registro de experimentos y modelos utilice MLflow
+Usando FastAPI cree un API que consuma el mejor modelo
+Cree una interfaz gr´afica usando Streamlit que permita realizar inferencia.
+Utilice Github Actions para construir y publicar las im´agenes de contenedores.
+Usando SHAP realice interpretaci´on de los modelos desplegados y cambios de los mismos.
+Integre Argo CD para el despliegue autom´atico en kubernetes.
+Todos los servicios/componentes de este proyecto deben estar cada uno en su propio contenedor,
+no es admitido que las instancias de los contenedores sean construidas en la m´aquina de despliegue, si
+requiere construir una imagen de contenedor debe crear un workflow en Github Actions que realice esta
+tarea, teniendo como fin almacenar la imagen de contenedor en DockerHub, lo que permitir´a instanciar
+la imagen directamente en kubernetes.
+La entrega consiste en c´odigo fuente en repositorio publico, workflows en Github Actions funcionales, despliegue del sistema sobre la maquina proporcionada mediante Argo-cd, seguimiento de experimentos mediante MLflow con bucket y base de datos. El proceso de inferencia debe tomar siempre
+el modelo definido en MLflow como producci´on, sin cambios en c´odigo. La recolecci´on, procesamiento,
+almacenamiento de datos y entrenamiento de modelos debe realizarse usando AirFlow. Cada nuevo
+entrenamiento despu´es del creado con la linea base de los datos (primera petici´on) debe estar acompa˜nado de una explicaci´on de por qu´e se da el entrenamiento m´as all´a de un factor de periodicidad o
+cantidad de datos nuevos.
+1
+Como sustentaci´on del proyecto, se debe entregar un v´ıdeo en un canal de YouTube con una duraci´on
+no mayor a 10 minutos. En donde explique, organizaci´on del proyecto, arquitectura y conexiones entre
+componentes, procesamiento y experimentaci´on realizada, posteriormente mostrar/usar interfaz gr´afica
+que permite realizar inferencia y cambios entre versiones de modelos acompa˜nados de su respectiva
+explicaci´on. No olvide mostrar la ejecuci´on de los workflow de Github Actions.
+2. Descripci´on del dataset
+Los datos fueron recopilados de realtor un sitio web de listados de bienes ra´ıces operado por Move,
+Inc., filial de News Corp, y con sede en Santa Clara, California. Es el segundo sitio web de listados de
+bienes ra´ıces m´as visitado en los Estados Unidos en 2024, con m´as de 100 millones de usuarios activos
+mensuales.
+Variables Descripci´on
+1 brokered by agencia/corredor codificado categ´oricamente
+2 status estado de la vivienda:
+a. lista para la venta o b. lista para construir
+3 price precio de la vivienda, es el precio de cotizaci´on actual
+o el precio de venta reciente si la casa se vendi´o recientemente
+4 bed N´umero de camas
+5 bath N´umero de ba˜nos
+6 acre lot Tama˜no del terreno/Propiedad en acres
+7 street direcci´on callejera codificada categ´oricamente
+8 city nombre de la ciudad
+9 state nombre del estado
+10 zip code c´odigo postal de la zona
+11 house size ´area de la casa/tama˜no/espacio habitable en pies cuadrados
+12 prev sold date Fecha de venta anterior
+Tabla 1: Descripci´on de variables.
+El objetivo de este dataset es determinar el precio de una propiedad teniendo en cuenta el resto
+de caracter´ısticas de la misma. Este dataset ser´a entregado por partes y debe ser recolectado para
+ir generando una vista completa del problema. A cada nuevo subconjunto de datos obtenido se debe
+determinar si es necesario entrenar un nuevo modelo o no.
+2.1. Cargar el Dataset
+Los datos ser´an obtenidos a trav´es de una API externa expuesta en la m´aquina virtual asignada al
+profesor alojada en la direcci´on IP http://10.43.100.103:8000. Esta API proporcionar´a un subconjunto de datos diferente en cada petici´on. Los estudiantes deber´an implementar un mecanismo para
+recolectar estos datos usando Airflow y utilizarlos para entrenar un modelo y registrarlo en el entorno
+de MLflow. Cada subconjunto de datos nuevos es insumo para realizar un nuevo entrenamiento; para
+esto, se debe evaluar en t´erminos de datos si se debe entrenar un nuevo modelo y si este modelo resultante debe ser enviado a producci´on o no.
+Debido a la cantidad de datos que entrega la API, se recomienda no usar la interfaz gr´afica de la
+misma, pues no podr´a visualizar los datos; ´usela como referencia para realizar los llamados a la API.
+Cada una de las peticiones tarda tiempo diferente, contiene cantidades y or´ıgenes de datos diferentes.
+Tenga en cuenta esto al momento de realizar peticiones. Es importante resaltar que existe un m´etodo
+para reiniciar el conteo de peticiones seg´un el grupo; este conteo est´a directamente relacionado con los
+datos que se entregan; en este proyecto no hay un grado de aleatoriedad en los datos, por lo tanto, la
+secuencia de datos es la misma en relaci´on al conteo de peticiones.
+2
+Figura 1: Arquitectura de Referencia
+Si presenta inconvenientes con la API, informe al grupo completo en Teams para encontrar la causa
+y soluci´on lo antes posible. El c´odigo de esta API no ser´a publicado, pues este contiene informaci´on
+que se espera sea obtenida mediante an´alisis.
+3. Arquitectura
+Este proyecto busca exponer al estudiante a una arquitectura t´ıpica en equipos que desarrollan/aplican inteligencia artificial. Estos equipos se enfrentan a tareas relacionadas con la recolecci´on
+de datos, procesamiento de informaci´on, entrenamiento y puesta en producci´on de modelos de Inteligencia Artificial. Para dar un adecuado manejo de este escenario, se propone una arquitectura que
+permite orquestar todo este proceso mediante AirFlow, realizar seguimiento de experimentos usando
+MLflow y distintos componentes de almacenamiento de datos crudos, informaci´on procesada, artefactos y meta-datos. Finalmente, se tienen componentes que permiten realizar integraci´on y despliegue
+continuo. Como puede observar, estos componentes son el acumulado del desarrollo del curso, por lo
+que su integraci´on no debe suponer un nuevo reto.
+El seguimiento de experimentos de Inteligencia Artificial requiere el almacenamiento de dos conjuntos de datos: Artefactos y Metadatos. Los artefactos hacen referencia a los elementos resultantes
+del proceso de entrenamiento, m´etricas, c´odigo, im´agenes, modelo, entre otros. Los metadatos son la
+informaci´on relativa a la ejecuci´on, par´ametros, tiempos, conjuntos de ejecuci´on, entre otros. Para
+almacenar estos datos, se requieren dos artefactos, una base de datos para los metadatos y un sistema de archivos para los artefactos; estos dos elementos dan soporte a MLflow como herramienta de
+seguimiento. Para la ejecuci´on de experimentos, se requiere otro sistema en donde se van a ejecutar
+los entrenamientos que se registrar´an en MLflow. Por ´ultimo, el sistema de archivos, tambi´en funciona
+3
+como registro de modelos, por lo cual, es posible mantener los modelos de producci´on o desarrollo
+disponibles para ser usados por las aplicaciones desplegadas.
+El proceso de orquestaci´on se realiza mediante AirFlow, esta herramienta ya contiene bases de
+datos, cach´e, logs, plugins, todo lo necesario para funcionar, mediante la creaci´on de DAGs se definen
+los flujos de ejecuci´on. Para el proceso de experimentaci´on se deben presentar los argumentos por los
+cuales se modifican y separan los datos, se seleccionan los modelos y se definen m´etricas. Para entrenar
+el modelo se debe crear el pipeline de procesamiento y entrenamiento que debe ejecutar AirFlow, para
+los dos escenarios anteriores se debe registrar en MLflow la experimentaci´on realizada, adicionalmente
+registrar los modelos. Por ´ultimo, para el proceso de inferencia se debe utilizar los modelos registrados
+en MLflow, los modelos deben estar publicados y asociados al stage de producci´on, lo que permite
+cambiar el modelo seleccionado, sin realizar cambios en el c´odigo desplegado.
+Todas las im´agenes de contenedores que se usen en el proceso de despliegue deben obtenerse de
+un registro de contenedores (DockerHub), pueden ser versiones oficiales de las herramientas o creadas
+por el equipo de trabajo. Es importante resaltar que el c´odigo fuente de todo el proyecto debe estar
+en Github, esto incluye los workflow de Github Actions, que se encargar´an de tomar los archivos de
+docker (Dockerfile) correspondientes a cada servicio, los construir´an y publicar´an en Dockerhub. As´ı
+en la m´aquina virtual destinada para el desarrollo del curso se podr´an consumir las im´agenes de todo
+el proyecto en sus correspondientes manifiestos.
+Como observar´a en la descripci´on de componentes, en la mayor´ıa de casos solo se especifica, su
+funci´on y relaci´on. Es trabajo del estudiante definir como va a implementar el sistema, recuerde, este
+ejercicio busca acercarlo a un escenario de producci´on. Es decir, la experimentaci´on genera modelos
+y despliegues de clientes consumen esos modelos. Es importante la disponibilidad de cada elemento
+para garantizar que el equipo de cient´ıficos de datos pueda registrar sus modelos y el despliegue de los
+sistemas de los clientes est´en disponibles.
+4. Componentes
+Para construir este sistema, cada componente debe tener una funci´on clara y definida, as´ı mismo
+las interacciones entre los componentes deben ser explicitas, es importante prever escenarios de fallo y
+tomar medidas o elevar los errores necesarios. Cada componente debe existir dentro de un contenedor
+y estar interconectado en red o archivos seg´un la necesidad, es importante recordar que la comunicaci´on entre servicios debe ser ligera. La elecci´on t´ecnica de cada componente es trabajo del estudiante,
+basada en la necesidad del microservicio. Cada componente debe ser justificado bajo un criterio t´ecnico
+o, cuanto menos, l´ogico. No existe una ´unica respuesta correcta; la argumentaci´on define la calificaci´on.
+Esta secci´on describe los componentes que los estudiantes deben construir/instanciar, es importante resaltar que existen servicios adicionales que no se describen pues no est´an bajo control de los
+estudiantes, son herramientas que deben usar y fueron vistas en clase.
+4.1. API Data Source
+Este componente es una API que expone los datos para ser usados en todo el flujo. Cada una
+de las peticiones que se hagan estar´an asociadas al grupo asignado en el curso y al d´ıa de la clase.
+Cada respuesta que entrega la API pretende simular un nuevo punto de tiempo, un nuevo grupo de
+informaci´on recolectada en un ambiente productivo. Al finalizar la recolecci´on de datos, la respuesta
+ser´a un error, con un mensaje indicando que se recolectaron todos los datos. No realice peticiones
+usando la interfaz gr´afica de Swagger en el endpoint /docs, pues la cantidad de datos enviados no es
+posible verlos con esta herramienta.
+4
+4.2. MLflow
+Este servidor debe estar funcionando constantemente; en caso de ca´ıda, debe iniciarse autom´aticamente. Debe tener conexi´on entre bucket y base de datos de metadata. Ac´a debe registrar la experimentaci´on que realice buscando el mejor modelo para el conjunto de datos propuesto. El que
+considere como mejor versi´on, deber´a estar marcado como modelo de producci´on. Se deben mantener
+las versiones entrenadas de los distintos grupos de informaci´on, no solo presentar el modelo definitivo.
+4.3. AirFlow
+Esta herramienta es la encargada de orquestar el procesamiento de datos, debe tomar los datos de la
+API la cual entregar´a a cada grupo (indicando su n´umero) una serie de datos para ser analizados y que
+permitir´an realizar entrenamiento si se considera necesario. Tenga en cuenta que no se deben realizar
+todas las consultas posibles a la API y posteriormente entrenar un modelo, por cada petici´on se debe
+realizar el proceso completo de entrenamiento y publicaci´on en caso de ser necesario. Cada DAG en
+caso de ser m´as de uno, debe tener m´ultiples tareas. La informaci´on recolectada debe ser almacenada
+en la base de datos RAW DATA y aplicar el procesamiento definido para utilizar la informaci´on en
+proceso de entrenamiento, almacenando los resultados en CLEAN DATA. Adicionalmente, una vez se
+define un proceso de entrenamiento, debe ejecutar este proceso, registrando los resultados en MLflow.
+Aseg´urese de generar un registro que permita entender lo sucedido en el DAG. Como sugerencia,
+registre en MLFLOW los componentes e informaci´on relevante para la toma de decisiones.
+4.4. Sistema de Archivos - Bucket
+Para el registro de artefactos, tal como se vio en clase, propone el uso de un bucket y acceder a el
+mediante el uso de boto3. Configure el contenedor o si lo desea use otro m´etodo de almacenamiento;
+puede ser con o sin proveedor cloud.
+4.5. Base de Datos - Metadata
+Esta base de datos contiene lo relativo a ejecuciones registradas en MLflow; a diferencia del escenario
+presentado en clase, debe crear una base de datos en un contenedor y no puede ser SQLite. Sugerencia:
+PostgreSQL.
+4.6. Base de Datos - CLEAN DATA
+Este componente contiene la informaci´on que se usar´a como insumo para la experimentaci´on.
+4.7. Base de Datos - RAW DATA
+Este componente contiene la informaci´on sin modificaciones. En este componente se permite a
+los estudiantes proponer c´omo se dar´a manejo a los datos. Es importante recordar que en el proceso
+de experimentaci´on es ´optimo poder reproducir los experimentos previamente ejecutados (aunque los
+modelos no sean deterministas).
+4.8. Inferencia UI
+Este componente permitir´a usar el mejor modelo de la experimentaci´on, es decir, el que est´e configurado como ’Production’ en MLflow mediante el consumo del componente de FastAPI. Para esto se
+debe crear un contenedor que permita consumir el modelo registrado en MLflow, solicitar al usuario
+datos para realizar inferencia y al presentar resultados, indicar cu´al es el modelo que est´a usando.
+Para la creaci´on de esta interfaz, no se espera un desarrollo web, se propone al estudiante revisar el
+framework ”Streamlit”, el cual est´a dise˜nado para crear interfaces para aplicaciones de inteligencia artificial o ciencia de datos en minutos. Para este proyecto final se debe generar un apartado de historial
+y explicabilidad, en donde se debe mostrar un registro de los modelos previamente entrenados, cu´ales
+fueron puestos en producci´on y cu´ales no; adicionalmente, cu´al fue el criterio de rechazo (en los casos
+que aplique) y cu´al es el desempe˜no en m´etricas de los modelos precios y actual.
+5
+4.9. Observabilidad
+Este bloque es agn´ostico al resto del sistema y sus conexiones ser´an determinadas por el estudiante;
+como m´ınimo, se espera que se recolecte informaci´on de la API que permite realizar inferencia al modelo de mejor desempe˜no. Este bloque est´a compuesto por dos servicios, Grafana para la visualizaci´on
+de datos y Prometheus para la recolecci´on de m´etricas.
+4.10. FastAPI
+Este componente es el encargado de exponer el modelo entrenado, el cual debe estar almacenado en
+MLflow. Esta API debe consumir el modelo establecido con mejor desempe˜no, marcado con un TAG
+espec´ıfico; no debe requerir cambios en caso de un nuevo entrenamiento. Es importante almacenar los
+datos nuevos de inferencia en la base de datos RAW DATA, pues estos son insumo vital en el ciclo de
+vida de un modelo.
+4.11. GitHub Actions
+Este componente es responsable del ciclo de Integraci´on Continua (CI). Permite definir workflows
+autom´aticos que se ejecutan al detectar cambios en el c´odigo del repositorio. En el contexto de este
+proyecto, GitHub Actions debe ser usado para construir las im´agenes de contenedores de cada componente (Airflow, FastAPI, Streamlit, MLflow, entre otros), validarlas y publicarlas en un registro
+de contenedores como DockerHub. Este proceso debe garantizar que toda actualizaci´on del c´odigo se
+refleje en una nueva versi´on de imagen, versionada y lista para ser desplegada posteriormente por
+Argo CD. La correcta definici´on de estos flujos asegura trazabilidad, consistencia y automatizaci´on del
+entorno.
+4.12. Argo CD
+Este componente permite implementar el ciclo de vida de despliegue continuo. Argo CD observa
+los manifiestos del sistema versionados en el repositorio Git y sincroniza autom´aticamente los cambios
+con el entorno de Kubernetes. Esto permite que, ante la generaci´on de una nueva imagen o cambio en
+configuraciones de despliegue, se actualice autom´aticamente la API de inferencia u otros servicios.
+Apartado opcional - Bono
+Aunque el proyecto base no especifica de forma obligatoria que todos los componentes sean desplegados sobre Kubernetes, es aceptable que herramientas como Airflow y MLflow sean ejecutadas
+mediante docker-compose, siempre que cumplan con los requerimientos funcionales del sistema y se
+mantenga el principio de contenerizaci´on aislada.
+No obstante, se otorgar´a un bono adicional a los estudiantes que desplieguen todo el sistema completamente sobre un entorno Kubernetes, utilizando Argo CD como herramienta de gesti´on de despliegue
+continuo. Esto implica que todos los servicios, incluyendo Airflow, MLflow, API de inferencia, interfaz gr´afica y bases de datos, deben estar definidos mediante manifiestos y gestionados dentro del cl´uster.
+Para el bono se debe usar HELM que es un gestor de paquetes para Kubernetes que permite
+definir, instalar y actualizar aplicaciones mediante plantillas llamadas charts, facilitando el despliegue
+reproducible y parametrizable de servicios complejos.
+Airflow debe estar sincronizado con un repositorio de git
+minIO debe crear autom´aticamente el bucket en caso de no existir
+6
+Agregue un apartado de interpretabilidad usando shap en la interfaz gr´afica, al menos para
+el modelo final despues de recibir todas las peticiones de la API
+Agregu´e los ConfigMap necesarios para tener el dashboard de grafana listo sin necesidad de
+cargarlo manualmente
+Este despliegue completo representa una madurez superior en la adopci´on de pr´acticas de MLOps
+en producci´on, integrando orquestaci´on, CI/CD y gesti´on declarativa.
