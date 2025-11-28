@@ -1,0 +1,118 @@
+name: CI - Tests and Linting
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Lint Python Code
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install linting tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black
+
+      - name: Run flake8
+        run: |
+          flake8 proyecto_final/dags/ proyecto_final/services/ proyecto_final/tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 proyecto_final/dags/ proyecto_final/services/ proyecto_final/tests/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        continue-on-error: true
+
+      - name: Check code formatting with black
+        run: |
+          black --check proyecto_final/dags/ proyecto_final/services/ proyecto_final/tests/
+        continue-on-error: true
+
+  test-api:
+    name: Test API Service
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          cd proyecto_final/services/api
+          pip install -r requirements.txt
+          pip install pytest httpx
+
+      - name: Run API tests
+        run: |
+          cd proyecto_final/tests
+          pytest test_api.py -v
+        continue-on-error: true
+
+  test-pipeline:
+    name: Test Data Pipeline
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          cd proyecto_final/dags
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Run pipeline tests
+        run: |
+          cd proyecto_final/tests
+          pytest test_pipeline.py -v
+        continue-on-error: true
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: './proyecto_final'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+        continue-on-error: true
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+        continue-on-error: true
