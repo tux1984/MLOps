@@ -1,19 +1,17 @@
 """
-FastAPI - Servicio de Inferencia
+FastAPI - API de Inferencia para Predicción de Precios Inmobiliarios
 
-Endpoints:
-- POST /predict: Predicción individual
-- POST /predict-batch: Predicción en lote
-- POST /explain: Explicación SHAP de predicción
-- GET /health: Health check
-- GET /metrics: Métricas Prometheus
-- GET /model-info: Información del modelo en producción
-
-El modelo se carga dinámicamente desde MLflow Model Registry (stage: Production)
-No requiere cambios de código cuando se actualiza el modelo en MLflow
+Características:
+- Consume modelo desde MLflow Model Registry (stage: Production)
+- Predicción individual y batch
+- Explicabilidad con SHAP
+- Guarda todas las inferencias en RAW DB para reentrenamiento
+- Métricas para Prometheus
+- No requiere cambios de código al actualizar modelo
 """
 
 from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
@@ -26,393 +24,596 @@ import os
 import logging
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 import time
+import psycopg2
+import psycopg2.extras
+from datetime import datetime
+import shap
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Configuración
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
-MODEL_NAME_PREFIX = os.getenv("MODEL_NAME_PREFIX", "diabetes")
+MODEL_NAME = os.getenv("MLFLOW_MODEL_NAME", "realtor_price_model")
+
+# Configuración de base de datos RAW para guardar inferencias
+RAW_DB_HOST = os.getenv("RAW_DB_HOST", "db-raw")
+RAW_DB_PORT = int(os.getenv("RAW_DB_PORT", "5432"))
+RAW_DB_NAME = os.getenv("RAW_DB_NAME", "mlops_raw")
+RAW_DB_USER = os.getenv("RAW_DB_USER", "mlops")
+RAW_DB_PASSWORD = os.getenv("RAW_DB_PASSWORD", "mlops123")
 
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
+# Métricas Prometheus
 prediction_counter = Counter('predictions_total', 'Total predictions', ['endpoint', 'status'])
 prediction_latency = Histogram('prediction_latency_seconds', 'Prediction latency', ['endpoint'])
 prediction_errors = Counter('prediction_errors_total', 'Total prediction errors')
 
 app = FastAPI(
-    title="MLOps Diabetes Prediction API",
-    description="API para predicción de readmisión hospitalaria de pacientes diabéticos",
+    title="MLOps Realtor Price Prediction API",
+    description="API para predicción de precios de propiedades inmobiliarias",
     version="1.0.0"
 )
 
+# CORS para frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Cache del modelo
 model_cache = {
     'model': None,
     'version': None,
-    'name': None
+    'name': None,
+    'stage': None
 }
 
 
-class PatientData(BaseModel):
-    """Datos de un paciente individual"""
-    age_numeric: int = Field(..., ge=0, le=100, description="Edad del paciente")
-    time_in_hospital: int = Field(..., ge=1, le=14, description="Días en hospital")
-    num_lab_procedures: int = Field(..., ge=0, description="Número de procedimientos de laboratorio")
-    num_procedures: int = Field(..., ge=0, le=10, description="Número de procedimientos")
-    num_medications: int = Field(..., ge=0, description="Número de medicamentos")
-    number_outpatient: int = Field(..., ge=0, description="Visitas ambulatorias previas")
-    number_emergency: int = Field(..., ge=0, description="Visitas de emergencia previas")
-    number_inpatient: int = Field(..., ge=0, description="Hospitalizaciones previas")
-    number_diagnoses: int = Field(..., ge=1, le=16, description="Número de diagnósticos")
-    max_glu_serum_encoded: int = Field(..., ge=0, le=3, description="Glucosa sérica")
-    a1cresult_encoded: int = Field(..., ge=0, le=3, description="Resultado A1c")
-    change_encoded: int = Field(..., ge=0, le=1, description="Cambio en medicación")
-    diabetesmed_encoded: int = Field(..., ge=0, le=1, description="Medicación diabetes")
-    num_diabetes_meds: int = Field(..., ge=0, description="Cantidad de medicamentos diabetes")
-    gender_encoded: int = Field(..., ge=0, le=1, description="Género (0=Female, 1=Male)")
-    race_encoded: int = Field(..., ge=0, le=5, description="Raza codificada")
-    admission_type_encoded: int = Field(..., ge=0, le=7, description="Tipo de admisión")
-    discharge_disposition_encoded: int = Field(..., ge=0, le=28, description="Disposición de alta")
-    admission_source_encoded: int = Field(..., ge=0, le=25, description="Fuente de admisión")
-    payer_code_encoded: int = Field(..., ge=0, le=22, description="Código de pagador")
-    medical_specialty_encoded: int = Field(..., ge=0, le=83, description="Especialidad médica")
-    diag_1_encoded: int = Field(..., ge=0, description="Diagnóstico primario")
+class PropertyData(BaseModel):
+    """Datos de una propiedad inmobiliaria"""
+    brokered_by: str = Field(..., description="Agencia/corredor")
+    status: str = Field(..., description="Estado: for_sale o ready_to_build")
+    bed: int = Field(..., ge=0, le=20, description="Número de habitaciones")
+    bath: float = Field(..., ge=0, le=10, description="Número de baños")
+    acre_lot: float = Field(..., ge=0, description="Tamaño del terreno en acres")
+    street: str = Field(..., description="Dirección de la calle")
+    city: str = Field(..., description="Ciudad")
+    state: str = Field(..., description="Estado")
+    zip_code: str = Field(..., description="Código postal")
+    house_size: int = Field(..., ge=0, description="Tamaño de la casa (sq ft)")
+    prev_sold_date: Optional[str] = Field(None, description="Fecha de venta anterior (YYYY-MM-DD)")
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
-                "age_numeric": 55,
-                "time_in_hospital": 3,
-                "num_lab_procedures": 45,
-                "num_procedures": 1,
-                "num_medications": 15,
-                "number_outpatient": 0,
-                "number_emergency": 0,
-                "number_inpatient": 0,
-                "number_diagnoses": 9,
-                "max_glu_serum_encoded": 0,
-                "a1cresult_encoded": 0,
-                "change_encoded": 1,
-                "diabetesmed_encoded": 1,
-                "num_diabetes_meds": 2,
-                "gender_encoded": 1,
-                "race_encoded": 2,
-                "admission_type_encoded": 1,
-                "discharge_disposition_encoded": 1,
-                "admission_source_encoded": 7,
-                "payer_code_encoded": 5,
-                "medical_specialty_encoded": 12,
-                "diag_1_encoded": 250
+                "brokered_by": "Century 21",
+                "status": "for_sale",
+                "bed": 3,
+                "bath": 2.0,
+                "acre_lot": 0.25,
+                "street": "123 Main St",
+                "city": "Miami",
+                "state": "Florida",
+                "zip_code": "33101",
+                "house_size": 1500,
+                "prev_sold_date": "2020-01-15"
             }
         }
 
 
 class PredictionRequest(BaseModel):
     """Request para predicción individual"""
-    patient: PatientData
+    property: PropertyData
 
 
 class BatchPredictionRequest(BaseModel):
-    """Request para predicción en batch"""
-    patients: List[PatientData]
+    """Request para predicción batch"""
+    properties: List[PropertyData]
 
 
 class PredictionResponse(BaseModel):
-    """Response de predicción individual"""
-    prediction: int
-    probability: float
+    """Respuesta de predicción"""
+    predicted_price: float
+    model_name: str
     model_version: str
+    model_stage: str
+    timestamp: str
 
 
 class BatchPredictionResponse(BaseModel):
-    """Response de predicción en batch"""
+    """Respuesta de predicción batch"""
     predictions: List[Dict[str, Any]]
+    model_name: str
     model_version: str
+    model_stage: str
+    total_predictions: int
 
 
-class ExplainRequest(BaseModel):
-    """Request para explicación SHAP"""
-    patient: PatientData
+def get_raw_db_connection():
+    """Establece conexión a base de datos RAW"""
+    return psycopg2.connect(
+        host=RAW_DB_HOST,
+        port=RAW_DB_PORT,
+        dbname=RAW_DB_NAME,
+        user=RAW_DB_USER,
+        password=RAW_DB_PASSWORD
+    )
 
 
-class ExplainResponse(BaseModel):
-    """Response de explicación"""
-    prediction: int
-    probability: float
-    shap_values: Dict[str, float]
-    base_value: float
-    model_version: str
-
-
-def load_model_from_mlflow():
+def save_inference_to_raw_db(property_data: dict, predicted_price: float):
     """
-    Carga el modelo en stage 'Production' desde MLflow Model Registry
+    Guarda datos de inferencia en RAW DB para futuros reentrenamientos
+    
+    Args:
+        property_data: Datos de la propiedad
+        predicted_price: Precio predicho
+    """
+    try:
+        conn = get_raw_db_connection()
+        cur = conn.cursor()
+        
+        # Crear tabla si no existe
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS inference_log (
+                id SERIAL PRIMARY KEY,
+                brokered_by VARCHAR(500),
+                status VARCHAR(50),
+                predicted_price FLOAT,
+                bed INTEGER,
+                bath FLOAT,
+                acre_lot FLOAT,
+                street VARCHAR(500),
+                city VARCHAR(200),
+                state VARCHAR(100),
+                zip_code VARCHAR(20),
+                house_size INTEGER,
+                prev_sold_date DATE,
+                inference_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                model_version VARCHAR(50)
+            )
+        """)
+        
+        # Insertar inferencia
+        cur.execute("""
+            INSERT INTO inference_log 
+            (brokered_by, status, predicted_price, bed, bath, acre_lot, 
+             street, city, state, zip_code, house_size, prev_sold_date, model_version)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            property_data.get('brokered_by'),
+            property_data.get('status'),
+            predicted_price,
+            property_data.get('bed'),
+            property_data.get('bath'),
+            property_data.get('acre_lot'),
+            property_data.get('street'),
+            property_data.get('city'),
+            property_data.get('state'),
+            property_data.get('zip_code'),
+            property_data.get('house_size'),
+            property_data.get('prev_sold_date'),
+            model_cache.get('version', 'unknown')
+        ))
+        
+        conn.commit()
+        logger.info(f"Inference saved to RAW DB")
+        
+    except Exception as e:
+        logger.error(f"Error saving inference to RAW DB: {str(e)}")
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+
+def load_production_model():
+    """
+    Carga el modelo en stage Production desde MLflow
     
     Returns:
-        tuple: (model, version, metadata)
+        Model: Modelo cargado
     """
     try:
         client = MlflowClient()
         
-        models = client.search_registered_models()
-        production_model = None
+        # Buscar modelo en stage Production
+        models = client.search_model_versions(f"name='{MODEL_NAME}'")
+        production_models = [m for m in models if m.current_stage == 'Production']
         
-        for model_info in models:
-            if model_info.name.startswith(MODEL_NAME_PREFIX):
-                versions = client.get_latest_versions(model_info.name, stages=["Production"])
-                if versions:
-                    production_model = versions[0]
-                    break
+        if not production_models:
+            logger.error(f"No model found in Production stage for {MODEL_NAME}")
+            return None
         
-        if not production_model:
-            logger.warning("No se encontró modelo en Production, buscando alternativa...")
-            for model_info in models:
-                if model_info.name.startswith(MODEL_NAME_PREFIX):
-                    all_versions = client.get_latest_versions(model_info.name)
-                    if all_versions:
-                        production_model = all_versions[0]
-                        break
+        # Tomar el primero (debería haber solo uno)
+        production_model = production_models[0]
+        model_uri = f"models:/{MODEL_NAME}/Production"
         
-        if not production_model:
-            raise ValueError(f"No se encontró modelo con prefix '{MODEL_NAME_PREFIX}'")
+        logger.info(f"Loading model: {MODEL_NAME} v{production_model.version} from Production")
+        model = mlflow.pyfunc.load_model(model_uri)
         
-        model_uri = f"models:/{production_model.name}/{production_model.version}"
-        loaded_model = mlflow.pyfunc.load_model(model_uri)
-        
-        model_cache['model'] = loaded_model
+        # Actualizar cache
+        model_cache['model'] = model
+        model_cache['name'] = MODEL_NAME
         model_cache['version'] = production_model.version
-        model_cache['name'] = production_model.name
+        model_cache['stage'] = 'Production'
         
-        logger.info(f"Modelo cargado: {production_model.name} v{production_model.version}")
-        
-        return loaded_model, production_model.version, production_model.name
+        logger.info(f"Model loaded successfully: {MODEL_NAME} v{production_model.version}")
+        return model
         
     except Exception as e:
-        logger.error(f"Error cargando modelo: {e}")
-        raise
+        logger.error(f"Error loading model: {str(e)}")
+        return None
 
 
 @app.on_event("startup")
 async def startup_event():
-    """
-    Evento de inicio: carga el modelo de MLflow
-    """
-    try:
-        load_model_from_mlflow()
-        logger.info("API iniciada correctamente")
-    except Exception as e:
-        logger.error(f"Error en startup: {e}")
+    """Inicializa el modelo al arrancar la API"""
+    logger.info("Starting API and loading model...")
+    load_production_model()
+    if model_cache['model']:
+        logger.info(f"API ready with model {model_cache['name']} v{model_cache['version']}")
+    else:
+        logger.warning("API started but no model loaded. Check MLflow.")
 
 
 @app.get("/")
-async def root():
+def root():
     """Endpoint raíz"""
     return {
-        "message": "MLOps Diabetes Prediction API",
-        "version": "1.0.0",
-        "status": "running"
+        "service": "MLOps Realtor Price Prediction API",
+        "status": "running",
+        "model_loaded": model_cache['model'] is not None,
+        "endpoints": {
+            "health": "/health",
+            "model_info": "/model-info",
+            "predict": "/predict",
+            "predict_batch": "/predict-batch",
+            "explain": "/explain",
+            "metrics": "/metrics",
+            "reload_model": "/reload-model"
+        }
     }
 
 
 @app.get("/health")
-async def health_check():
-    """
-    Health check endpoint
-    
-    Verifica que:
-    - API está corriendo
-    - Modelo está cargado
-    - Conexión a MLflow está disponible
-    """
-    if not model_cache['model']:
-        try:
-            load_model_from_mlflow()
-        except Exception as e:
-            raise HTTPException(status_code=503, detail=f"Modelo no disponible: {str(e)}")
-    
+def health_check():
+    """Health check endpoint"""
+    model_loaded = model_cache['model'] is not None
     return {
-        "status": "healthy",
-        "model_loaded": model_cache['model'] is not None,
-        "model_name": model_cache['name'],
-        "model_version": model_cache['version']
-    }
-
-
-@app.get("/model-info")
-async def get_model_info():
-    """
-    Retorna información del modelo en producción
-    
-    Returns:
-        dict: Información del modelo (nombre, versión, métricas, etc)
-    """
-    if not model_cache['model']:
-        try:
-            load_model_from_mlflow()
-        except Exception as e:
-            raise HTTPException(status_code=503, detail=f"Modelo no disponible: {str(e)}")
-    
-    return {
-        "model_name": model_cache['name'],
-        "model_version": model_cache['version'],
-        "stage": "Production",
+        "status": "healthy" if model_loaded else "degraded",
+        "model_loaded": model_loaded,
+        "model_name": model_cache.get('name'),
+        "model_version": model_cache.get('version'),
         "mlflow_uri": MLFLOW_TRACKING_URI
     }
 
 
+@app.get("/model-info")
+def model_info():
+    """Información del modelo actual"""
+    if not model_cache['model']:
+        raise HTTPException(status_code=503, detail="Model not loaded")
+    
+    return {
+        "model_name": model_cache['name'],
+        "model_version": model_cache['version'],
+        "model_stage": model_cache['stage'],
+        "mlflow_tracking_uri": MLFLOW_TRACKING_URI
+    }
+
+
 @app.post("/predict", response_model=PredictionResponse)
-async def predict(request: PredictionRequest):
+def predict(request: PredictionRequest):
     """
-    Predicción individual
+    Predicción individual de precio de propiedad
     
     Args:
-        request: Datos del paciente
-    
+        request: Datos de la propiedad
+        
     Returns:
-        PredictionResponse: Predicción y probabilidad
+        PredictionResponse: Precio predicho y metadata del modelo
     """
     start_time = time.time()
     
     try:
         if not model_cache['model']:
-            load_model_from_mlflow()
+            prediction_counter.labels(endpoint='predict', status='error').inc()
+            raise HTTPException(status_code=503, detail="Model not loaded")
         
-        input_data = pd.DataFrame([request.patient.dict()])
+        # Convertir a DataFrame
+        property_dict = request.property.dict()
+        df = pd.DataFrame([property_dict])
         
-        prediction = model_cache['model'].predict(input_data)
+        # Realizar predicción
+        prediction = model_cache['model'].predict(df)[0]
         
-        readmission_map = {0: "NO", 1: "<30", 2: ">30"}
-        result_label = readmission_map.get(int(prediction[0]), "Unknown")
+        # Guardar inferencia en RAW DB
+        save_inference_to_raw_db(property_dict, float(prediction))
         
+        # Métricas
+        latency = time.time() - start_time
+        prediction_latency.labels(endpoint='predict').observe(latency)
         prediction_counter.labels(endpoint='predict', status='success').inc()
-        prediction_latency.labels(endpoint='predict').observe(time.time() - start_time)
         
         return PredictionResponse(
-            prediction=int(prediction[0]),
-            probability=0.0,
-            model_version=str(model_cache['version'])
+            predicted_price=float(prediction),
+            model_name=model_cache['name'],
+            model_version=model_cache['version'],
+            model_stage=model_cache['stage'],
+            timestamp=datetime.utcnow().isoformat()
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
+        prediction_errors.inc()
         prediction_counter.labels(endpoint='predict', status='error').inc()
-        logger.error(f"Error en predicción: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Prediction error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
 
 @app.post("/predict-batch", response_model=BatchPredictionResponse)
-async def predict_batch(request: BatchPredictionRequest):
+def predict_batch(request: BatchPredictionRequest):
     """
-    Predicción en batch
+    Predicción batch de múltiples propiedades
     
     Args:
-        request: Lista de pacientes
-    
+        request: Lista de propiedades
+        
     Returns:
-        BatchPredictionResponse: Lista de predicciones
+        BatchPredictionResponse: Predicciones y metadata
     """
     start_time = time.time()
     
     try:
         if not model_cache['model']:
-            load_model_from_mlflow()
+            prediction_counter.labels(endpoint='predict_batch', status='error').inc()
+            raise HTTPException(status_code=503, detail="Model not loaded")
         
-        patients_data = [p.dict() for p in request.patients]
-        input_df = pd.DataFrame(patients_data)
+        # Convertir a DataFrame
+        properties_list = [prop.dict() for prop in request.properties]
+        df = pd.DataFrame(properties_list)
         
-        predictions = model_cache['model'].predict(input_df)
+        # Realizar predicciones
+        predictions = model_cache['model'].predict(df)
         
+        # Construir respuesta
         results = []
-        for i, pred in enumerate(predictions):
-            readmission_map = {0: "NO", 1: "<30", 2: ">30"}
+        for i, (prop_dict, pred) in enumerate(zip(properties_list, predictions)):
+            # Guardar cada inferencia
+            save_inference_to_raw_db(prop_dict, float(pred))
+            
             results.append({
                 "index": i,
-                "prediction": int(pred),
-                "prediction_label": readmission_map.get(int(pred), "Unknown")
+                "property": prop_dict,
+                "predicted_price": float(pred)
             })
         
-        prediction_counter.labels(endpoint='predict-batch', status='success').inc()
-        prediction_latency.labels(endpoint='predict-batch').observe(time.time() - start_time)
+        # Métricas
+        latency = time.time() - start_time
+        prediction_latency.labels(endpoint='predict_batch').observe(latency)
+        prediction_counter.labels(endpoint='predict_batch', status='success').inc()
         
         return BatchPredictionResponse(
             predictions=results,
-            model_version=str(model_cache['version'])
+            model_name=model_cache['name'],
+            model_version=model_cache['version'],
+            model_stage=model_cache['stage'],
+            total_predictions=len(results)
         )
         
+    except HTTPException:
+        raise
     except Exception as e:
-        prediction_counter.labels(endpoint='predict-batch', status='error').inc()
-        logger.error(f"Error en predicción batch: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        prediction_errors.inc()
+        prediction_counter.labels(endpoint='predict_batch', status='error').inc()
+        logger.error(f"Batch prediction error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Batch prediction failed: {str(e)}")
 
 
-@app.post("/explain", response_model=ExplainResponse)
-async def explain_prediction(request: ExplainRequest):
+@app.post("/explain")
+def explain_prediction(request: PredictionRequest):
     """
-    Explicación SHAP de predicción
+    Explicación SHAP de una predicción
     
     Args:
-        request: Datos del paciente
-    
+        request: Datos de la propiedad
+        
     Returns:
-        ExplainResponse: Predicción y valores SHAP
+        dict: Valores SHAP y explicación
     """
-    start_time = time.time()
-    
     try:
         if not model_cache['model']:
-            load_model_from_mlflow()
+            raise HTTPException(status_code=503, detail="Model not loaded")
         
-        input_data = pd.DataFrame([request.patient.dict()])
-        prediction = model_cache['model'].predict(input_data)
+        # Convertir a DataFrame
+        property_dict = request.property.dict()
+        df = pd.DataFrame([property_dict])
         
-        shap_values_dict = {}
-        base_value = 0.0
+        # Realizar predicción
+        prediction = model_cache['model'].predict(df)[0]
         
-        prediction_counter.labels(endpoint='explain', status='success').inc()
-        prediction_latency.labels(endpoint='explain').observe(time.time() - start_time)
+        # Calcular SHAP values
+        # Nota: Esto asume que el modelo tiene un modelo subyacente
+        try:
+            explainer = shap.Explainer(model_cache['model'])
+            shap_values = explainer(df)
+            
+            # Extraer valores
+            feature_names = df.columns.tolist()
+            shap_vals = shap_values.values[0].tolist()
+            base_value = shap_values.base_values[0] if hasattr(shap_values, 'base_values') else 0
+            
+            # Crear lista ordenada por impacto
+            feature_importance = [
+                {"feature": name, "value": float(val), "data_value": df[name].values[0]}
+                for name, val in zip(feature_names, shap_vals)
+            ]
+            feature_importance.sort(key=lambda x: abs(x['value']), reverse=True)
+            
+            return {
+                "predicted_price": float(prediction),
+                "base_value": float(base_value),
+                "shap_values": feature_importance,
+                "model_name": model_cache['name'],
+                "model_version": model_cache['version']
+            }
+            
+        except Exception as e:
+            logger.warning(f"SHAP calculation failed: {str(e)}")
+            # Fallback: retornar feature importance del modelo si está disponible
+            return {
+                "predicted_price": float(prediction),
+                "message": "SHAP not available for this model type",
+                "model_name": model_cache['name'],
+                "model_version": model_cache['version']
+            }
         
-        return ExplainResponse(
-            prediction=int(prediction[0]),
-            probability=0.0,
-            shap_values=shap_values_dict,
-            base_value=base_value,
-            model_version=str(model_cache['version'])
-        )
-    
+    except HTTPException:
+        raise
     except Exception as e:
-        prediction_counter.labels(endpoint='explain', status='error').inc()
-        logger.error(f"Error en explicación: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/metrics")
-async def metrics():
-    """
-    Endpoint de métricas Prometheus
-    
-    Returns:
-        Response: Métricas en formato Prometheus
-    """
-    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
+        logger.error(f"Explanation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Explanation failed: {str(e)}")
 
 
 @app.post("/reload-model")
-async def reload_model():
+def reload_model():
     """
-    Recarga el modelo desde MLflow
+    Recarga el modelo desde MLflow (útil después de un nuevo deployment)
     
-    Útil cuando se promociona un nuevo modelo a Production
+    Returns:
+        dict: Información del modelo recargado
     """
     try:
-        load_model_from_mlflow()
-        return {
-            "status": "success",
-            "message": "Modelo recargado exitosamente",
-            "model_name": model_cache['name'],
-            "model_version": model_cache['version']
-        }
-    
+        load_production_model()
+        
+        if model_cache['model']:
+            return {
+                "status": "success",
+                "message": "Model reloaded successfully",
+                "model_name": model_cache['name'],
+                "model_version": model_cache['version'],
+                "model_stage": model_cache['stage']
+            }
+        else:
+            raise HTTPException(status_code=503, detail="Failed to reload model")
+            
     except Exception as e:
-        logger.error(f"Error al recargar modelo: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Model reload error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Model reload failed: {str(e)}")
+
+
+@app.get("/metrics")
+def metrics():
+    """Endpoint de métricas para Prometheus"""
+    return Response(
+        content=generate_latest(),
+        media_type=CONTENT_TYPE_LATEST
+    )
+
+
+@app.get("/models/history")
+def get_models_history():
+    """
+    Obtiene historial de todos los modelos registrados
+    
+    Returns:
+        dict: Lista de modelos con sus métricas y stages
+    """
+    try:
+        client = MlflowClient()
+        
+        # Obtener todas las versiones del modelo
+        models = client.search_model_versions(f"name='{MODEL_NAME}'")
+        
+        history = []
+        for model_version in models:
+            # Obtener métricas del run asociado
+            run = client.get_run(model_version.run_id)
+            metrics = run.data.metrics
+            
+            history.append({
+                "version": model_version.version,
+                "stage": model_version.current_stage,
+                "run_id": model_version.run_id,
+                "creation_timestamp": model_version.creation_timestamp,
+                "metrics": {
+                    "rmse": metrics.get("rmse"),
+                    "mae": metrics.get("mae"),
+                    "r2": metrics.get("r2"),
+                    "mape": metrics.get("mape")
+                },
+                "description": model_version.description or "",
+                "tags": model_version.tags
+            })
+        
+        # Ordenar por versión descendente
+        history.sort(key=lambda x: int(x['version']), reverse=True)
+        
+        return {
+            "model_name": MODEL_NAME,
+            "total_versions": len(history),
+            "history": history
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting models history: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get models history: {str(e)}")
+
+
+@app.get("/inference-stats")
+def get_inference_stats():
+    """
+    Estadísticas de inferencias realizadas
+    
+    Returns:
+        dict: Estadísticas de uso
+    """
+    try:
+        conn = get_raw_db_connection()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        
+        # Total de inferencias
+        cur.execute("SELECT COUNT(*) as total FROM inference_log")
+        total = cur.fetchone()['total'] if cur.rowcount > 0 else 0
+        
+        # Inferencias por modelo
+        cur.execute("""
+            SELECT model_version, COUNT(*) as count
+            FROM inference_log
+            GROUP BY model_version
+            ORDER BY count DESC
+        """)
+        by_model = cur.fetchall()
+        
+        # Inferencias recientes (últimas 24h)
+        cur.execute("""
+            SELECT COUNT(*) as recent
+            FROM inference_log
+            WHERE inference_timestamp > NOW() - INTERVAL '24 hours'
+        """)
+        recent = cur.fetchone()['recent'] if cur.rowcount > 0 else 0
+        
+        return {
+            "total_inferences": total,
+            "recent_24h": recent,
+            "by_model_version": by_model
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting inference stats: {str(e)}")
+        return {"total_inferences": 0, "error": str(e)}
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 
 if __name__ == "__main__":

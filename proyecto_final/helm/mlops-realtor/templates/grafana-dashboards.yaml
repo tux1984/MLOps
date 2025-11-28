@@ -1,0 +1,228 @@
+{{- if and .Values.grafana.enabled .Values.grafana.dashboards.enabled -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-mlops-overview
+  namespace: {{ .Values.namespace }}
+  labels:
+    grafana_dashboard: "1"
+data:
+  mlops-overview.json: |
+    {
+      "dashboard": {
+        "title": "MLOps - System Overview",
+        "tags": ["mlops", "overview"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "API - Total Predictions",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "sum(predictions_total)",
+                "refId": "A"
+              }
+            ],
+            "gridPos": {
+              "h": 8,
+              "w": 6,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "id": 2,
+            "title": "API - Predictions Rate (per minute)",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(predictions_total[1m])",
+                "refId": "A",
+                "legendFormat": "{{endpoint}}"
+              }
+            ],
+            "gridPos": {
+              "h": 8,
+              "w": 18,
+              "x": 6,
+              "y": 0
+            }
+          },
+          {
+            "id": 3,
+            "title": "API - Prediction Latency (p95)",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.95, rate(prediction_latency_seconds_bucket[5m]))",
+                "refId": "A",
+                "legendFormat": "{{endpoint}}"
+              }
+            ],
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 0,
+              "y": 8
+            }
+          },
+          {
+            "id": 4,
+            "title": "API - Error Rate",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "rate(prediction_errors_total[5m])",
+                "refId": "A"
+              }
+            ],
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 12,
+              "y": 8
+            }
+          },
+          {
+            "id": 5,
+            "title": "API - Success vs Error",
+            "type": "piechart",
+            "targets": [
+              {
+                "expr": "sum(predictions_total{status=\"success\"})",
+                "refId": "A",
+                "legendFormat": "Success"
+              },
+              {
+                "expr": "sum(predictions_total{status=\"error\"})",
+                "refId": "B",
+                "legendFormat": "Error"
+              }
+            ],
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 0,
+              "y": 16
+            }
+          }
+        ],
+        "refresh": "5s",
+        "schemaVersion": 16,
+        "version": 1
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-model-performance
+  namespace: {{ .Values.namespace }}
+  labels:
+    grafana_dashboard: "1"
+data:
+  model-performance.json: |
+    {
+      "dashboard": {
+        "title": "MLOps - Model Performance",
+        "tags": ["mlops", "model", "performance"],
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "Predictions by Endpoint",
+            "type": "bargauge",
+            "targets": [
+              {
+                "expr": "sum by (endpoint) (predictions_total)",
+                "refId": "A"
+              }
+            ],
+            "gridPos": {
+              "h": 10,
+              "w": 12,
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "id": 2,
+            "title": "Average Latency by Endpoint",
+            "type": "table",
+            "targets": [
+              {
+                "expr": "avg by (endpoint) (prediction_latency_seconds)",
+                "refId": "A"
+              }
+            ],
+            "gridPos": {
+              "h": 10,
+              "w": 12,
+              "x": 12,
+              "y": 0
+            }
+          },
+          {
+            "id": 3,
+            "title": "Request Volume Over Time",
+            "type": "graph",
+            "targets": [
+              {
+                "expr": "sum(rate(predictions_total[1m])) by (endpoint)",
+                "refId": "A",
+                "legendFormat": "{{endpoint}}"
+              }
+            ],
+            "gridPos": {
+              "h": 10,
+              "w": 24,
+              "x": 0,
+              "y": 10
+            }
+          }
+        ],
+        "refresh": "10s",
+        "schemaVersion": 16,
+        "version": 1
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-datasources
+  namespace: {{ .Values.namespace }}
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      {{- range .Values.grafana.datasources }}
+      - name: {{ .name }}
+        type: {{ .type }}
+        url: {{ .url }}
+        access: {{ .access }}
+        isDefault: {{ .isDefault }}
+        editable: true
+      {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-providers
+  namespace: {{ .Values.namespace }}
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: 'default'
+        orgId: 1
+        folder: 'MLOps'
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /etc/grafana/provisioning/dashboards
+{{- end }}
+

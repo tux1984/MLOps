@@ -1,0 +1,70 @@
+{{- if .Values.mlflow.enabled -}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mlflow
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.mlflow.service.type }}
+  ports:
+    - port: {{ .Values.mlflow.service.port }}
+      targetPort: 5000
+      {{- if eq .Values.mlflow.service.type "NodePort" }}
+      nodePort: {{ .Values.mlflow.service.nodePort }}
+      {{- end }}
+  selector:
+    app: mlflow
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.mlflow.replicas }}
+  selector:
+    matchLabels:
+      app: mlflow
+  template:
+    metadata:
+      labels:
+        app: mlflow
+    spec:
+      containers:
+        - name: mlflow
+          image: {{ .Values.images.mlflow.repository }}:{{ .Values.images.mlflow.tag }}
+          imagePullPolicy: {{ .Values.images.mlflow.pullPolicy }}
+          ports:
+            - containerPort: 5000
+          env:
+            - name: MLFLOW_BACKEND_STORE_URI
+              value: {{ .Values.mlflow.backend.storeUri | quote }}
+            - name: MLFLOW_DEFAULT_ARTIFACT_ROOT
+              value: {{ .Values.mlflow.artifactRoot | quote }}
+            - name: MLFLOW_S3_ENDPOINT_URL
+              value: {{ .Values.mlflow.s3.endpointUrl | quote }}
+            - name: AWS_ACCESS_KEY_ID
+              value: {{ .Values.mlflow.s3.accessKey | quote }}
+            - name: AWS_SECRET_ACCESS_KEY
+              value: {{ .Values.mlflow.s3.secretKey | quote }}
+          resources:
+            requests:
+              memory: {{ .Values.mlflow.resources.requests.memory }}
+              cpu: {{ .Values.mlflow.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.mlflow.resources.limits.memory }}
+              cpu: {{ .Values.mlflow.resources.limits.cpu }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+{{- end }}

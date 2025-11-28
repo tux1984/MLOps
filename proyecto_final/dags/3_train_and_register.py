@@ -677,6 +677,13 @@ with DAG(
     )
 
     # Flujo del DAG
-    [task_load_train, task_load_val, task_load_test] >> [task_train_rf, task_train_xgb, task_train_lr]
+    # Cargar datos primero
+    task_load_train >> [task_train_rf, task_train_xgb, task_train_lr]
+    task_load_val >> [task_train_rf, task_train_xgb, task_train_lr]
+    task_load_test >> [task_train_rf, task_train_xgb, task_train_lr]
+    
+    # Entrenar modelos y comparar
     [task_train_rf, task_train_xgb, task_train_lr] >> task_compare
+    
+    # Evaluar y promover
     task_compare >> task_evaluate >> task_promote >> task_summary

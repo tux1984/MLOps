@@ -1,12 +1,12 @@
 """
-Streamlit Frontend - Interfaz de Usuario
+Streamlit Frontend - Predicción de Precios Inmobiliarios
 
-Funcionalidades:
-- Predicción individual de pacientes
-- Predicción en batch (upload CSV)
-- Visualización de explicabilidad SHAP
-- Información del modelo en producción
-- Estadísticas de predicciones
+Características:
+- Predicción individual y batch
+- Historial de modelos entrenados con métricas
+- Explicabilidad con SHAP del modelo final
+- Visualización de métricas y performance
+- Conexión con FastAPI para inferencia
 """
 
 import streamlit as st
@@ -14,556 +14,621 @@ import requests
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from typing import Dict, List
+from datetime import datetime
 import os
-import time
-import shap
-import matplotlib.pyplot as plt
-import numpy as np
-import io
-import base64
+import json
 
+# Configuración
 API_URL = os.getenv("API_URL", "http://api:8000")
+MLFLOW_URL = os.getenv("MLFLOW_TRACKING_URI", "http://mlflow:5000")
 
 st.set_page_config(
-    page_title="MLOps Diabetes Prediction",
-    page_icon="🏥",
+    page_title="MLOps Realtor - Predicción de Precios",
+    page_icon="🏠",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
+# CSS personalizado
 st.markdown("""
 <style>
     .main-header {
         font-size: 2.5rem;
         font-weight: bold;
+        color: #1E3A8A;
         text-align: center;
         padding: 1rem 0;
     }
+    .sub-header {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #3B82F6;
+        margin-top: 1rem;
+    }
     .metric-card {
-        background-color: #f0f2f6;
-        padding: 1rem;
+        background-color: #F3F4F6;
         border-radius: 0.5rem;
+        padding: 1rem;
         margin: 0.5rem 0;
+    }
+    .prediction-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        text-align: center;
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 1rem 0;
+    }
+    .info-box {
+        background-color: #EFF6FF;
+        border-left: 4px solid #3B82F6;
+        padding: 1rem;
+        margin: 1rem 0;
+        border-radius: 0.25rem;
+    }
+    .warning-box {
+        background-color: #FEF3C7;
+        border-left: 4px solid #F59E0B;
+        padding: 1rem;
+        margin: 1rem 0;
+        border-radius: 0.25rem;
     }
 </style>
 """, unsafe_allow_html=True)
 
 
-def check_api_health() -> bool:
-    """
-    Verifica que la API esté disponible
-    
-    Returns:
-        bool: True si API está disponible
-    """
+def check_api_health():
+    """Verifica estado de la API"""
     try:
         response = requests.get(f"{API_URL}/health", timeout=5)
-        return response.status_code == 200
+        return response.json() if response.status_code == 200 else None
     except:
-        return False
+        return None
 
 
-def get_model_info() -> Dict:
-    """
-    Obtiene información del modelo en producción
-    
-    Returns:
-        dict: Información del modelo
-    """
+def get_model_info():
+    """Obtiene información del modelo actual"""
     try:
         response = requests.get(f"{API_URL}/model-info", timeout=5)
-        if response.status_code == 200:
-            return response.json()
-        return {}
+        return response.json() if response.status_code == 200 else None
     except:
-        return {}
+        return None
 
 
-def predict_single(patient_data: Dict) -> Dict:
-    """
-    Hace predicción individual
-    
-    Args:
-        patient_data: Datos del paciente
-    
-    Returns:
-        dict: Resultado de predicción
-    """
+def get_models_history():
+    """Obtiene historial de modelos"""
+    try:
+        response = requests.get(f"{API_URL}/models/history", timeout=10)
+        return response.json() if response.status_code == 200 else None
+    except:
+        return None
+
+
+def get_inference_stats():
+    """Obtiene estadísticas de inferencias"""
+    try:
+        response = requests.get(f"{API_URL}/inference-stats", timeout=5)
+        return response.json() if response.status_code == 200 else None
+    except:
+        return None
+
+
+def predict_single(property_data):
+    """Realiza predicción individual"""
     try:
         response = requests.post(
             f"{API_URL}/predict",
-            json={"patient": patient_data},
-            timeout=10
-        )
-        if response.status_code == 200:
-            return response.json()
-        else:
-            return {"error": f"Error {response.status_code}: {response.text}"}
-    except Exception as e:
-        return {"error": str(e)}
-
-
-def predict_batch(df: pd.DataFrame) -> List[Dict]:
-    """
-    Hace predicción en batch
-    
-    Args:
-        df: DataFrame con datos de múltiples pacientes
-    
-    Returns:
-        list: Lista de predicciones
-    """
-    try:
-        patients = df.to_dict('records')
-        response = requests.post(
-            f"{API_URL}/predict-batch",
-            json={"patients": patients},
+            json={"property": property_data},
             timeout=30
         )
         if response.status_code == 200:
             return response.json()
         else:
-            return {"error": f"Error {response.status_code}"}
+            return {"error": response.json().get("detail", "Unknown error")}
     except Exception as e:
         return {"error": str(e)}
 
 
-def get_shap_explanation(patient_data: Dict) -> Dict:
-    """
-    Obtiene explicación SHAP del modelo
-    
-    Args:
-        patient_data: Datos del paciente
-    
-    Returns:
-        dict: Explicación SHAP con valores y feature names
-    """
+def explain_prediction(property_data):
+    """Obtiene explicación SHAP de una predicción"""
     try:
         response = requests.post(
             f"{API_URL}/explain",
-            json={"patient": patient_data},
-            timeout=15
+            json={"property": property_data},
+            timeout=30
         )
         if response.status_code == 200:
             return response.json()
         else:
-            return {"error": f"Error {response.status_code}: {response.text}"}
+            return {"error": response.json().get("detail", "Unknown error")}
     except Exception as e:
         return {"error": str(e)}
 
 
-def plot_shap_waterfall(shap_values: List[float], feature_names: List[str], base_value: float, prediction: float):
-    """
-    Crea gráfico waterfall de SHAP
+# Sidebar - Navegación
+st.sidebar.markdown("# 🏠 MLOps Realtor")
+st.sidebar.markdown("---")
+
+menu = st.sidebar.radio(
+    "Navegación",
+    ["🎯 Predicción", "📊 Historial de Modelos", "🔍 Explicabilidad (SHAP)", "📈 Estadísticas"]
+)
+
+st.sidebar.markdown("---")
+
+# Estado de la API
+health = check_api_health()
+if health:
+    if health.get("model_loaded"):
+        st.sidebar.success("✅ API Conectada")
+        model_info = get_model_info()
+        if model_info:
+            st.sidebar.info(f"""
+**Modelo Activo:**
+- Nombre: {model_info['model_name']}
+- Versión: {model_info['model_version']}
+- Stage: {model_info['model_stage']}
+            """)
+    else:
+        st.sidebar.warning("⚠️ API conectada pero sin modelo")
+else:
+    st.sidebar.error("❌ API no disponible")
+
+st.sidebar.markdown("---")
+st.sidebar.markdown(f"**MLflow:** [{MLFLOW_URL}]({MLFLOW_URL})")
+
+
+# ==================== PÁGINA: PREDICCIÓN ====================
+if menu == "🎯 Predicción":
+    st.markdown('<div class="main-header">🏠 Predicción de Precios Inmobiliarios</div>', unsafe_allow_html=True)
     
-    Args:
-        shap_values: Valores SHAP
-        feature_names: Nombres de features
-        base_value: Valor base del modelo
-        prediction: Predicción final
-    """
-    # Crear DataFrame con valores SHAP
-    df = pd.DataFrame({
-        'Feature': feature_names,
-        'SHAP Value': shap_values
-    })
+    if not health or not health.get("model_loaded"):
+        st.markdown('<div class="warning-box">⚠️ El modelo no está disponible. Verifica que la API esté funcionando correctamente.</div>', unsafe_allow_html=True)
+        st.stop()
     
-    # Ordenar por valor absoluto
-    df['abs_value'] = df['SHAP Value'].abs()
-    df = df.sort_values('abs_value', ascending=False).head(15)
+    st.markdown('<div class="info-box">📋 Ingrese los datos de la propiedad para obtener una predicción de precio.</div>', unsafe_allow_html=True)
     
-    # Crear gráfico de barras con Plotly
-    fig = go.Figure()
+    col1, col2, col3 = st.columns(3)
     
-    colors = ['red' if x < 0 else 'green' for x in df['SHAP Value']]
+    with col1:
+        st.markdown("### 🏢 Información General")
+        brokered_by = st.text_input("Agencia/Corredor", "Century 21", help="Nombre de la agencia inmobiliaria")
+        status = st.selectbox("Estado", ["for_sale", "ready_to_build"], help="Estado actual de la propiedad")
+        street = st.text_input("Dirección", "123 Main St", help="Dirección de la calle")
+        city = st.text_input("Ciudad", "Miami")
+        state = st.text_input("Estado", "Florida")
+        zip_code = st.text_input("Código Postal", "33101")
     
-    fig.add_trace(go.Bar(
-        y=df['Feature'],
-        x=df['SHAP Value'],
-        orientation='h',
-        marker=dict(color=colors),
-        text=[f"{v:.3f}" for v in df['SHAP Value']],
-        textposition='auto'
-    ))
+    with col2:
+        st.markdown("### 📐 Características")
+        bed = st.number_input("Habitaciones", min_value=0, max_value=20, value=3, help="Número de habitaciones")
+        bath = st.number_input("Baños", min_value=0.0, max_value=10.0, value=2.0, step=0.5, help="Número de baños")
+        house_size = st.number_input("Tamaño Casa (sq ft)", min_value=0, value=1500, step=100, help="Tamaño en pies cuadrados")
+        acre_lot = st.number_input("Tamaño Terreno (acres)", min_value=0.0, value=0.25, step=0.05, help="Tamaño del terreno en acres")
     
-    fig.update_layout(
-        title=f"Top 15 Features - SHAP Explanation<br><sub>Base value: {base_value:.3f} → Prediction: {prediction:.3f}</sub>",
-        xaxis_title="SHAP Value (impact on model output)",
-        yaxis_title="Feature",
-        height=600,
-        showlegend=False
+    with col3:
+        st.markdown("### 📅 Historial")
+        prev_sold_date = st.date_input("Fecha Venta Anterior", value=None, help="Última fecha de venta (opcional)")
+        
+        st.markdown("### 💡 Acción")
+        predict_button = st.button("🎯 Predecir Precio", type="primary", use_container_width=True)
+        show_explanation = st.checkbox("Mostrar explicación SHAP", value=False)
+    
+    # Realizar predicción
+    if predict_button:
+        property_data = {
+            "brokered_by": brokered_by,
+            "status": status,
+            "bed": bed,
+            "bath": bath,
+            "acre_lot": acre_lot,
+            "street": street,
+            "city": city,
+            "state": state,
+            "zip_code": zip_code,
+            "house_size": house_size,
+            "prev_sold_date": prev_sold_date.strftime("%Y-%m-%d") if prev_sold_date else None
+        }
+        
+        with st.spinner("🔮 Analizando propiedad..."):
+            result = predict_single(property_data)
+        
+        if "error" in result:
+            st.error(f"❌ Error en la predicción: {result['error']}")
+        else:
+            # Mostrar predicción
+            st.markdown('<div class="prediction-box">', unsafe_allow_html=True)
+            st.markdown(f"Precio Predicho: ${result['predicted_price']:,.2f}")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # Metadata
+            col_a, col_b, col_c = st.columns(3)
+            col_a.metric("Modelo", result['model_name'])
+            col_b.metric("Versión", result['model_version'])
+            col_c.metric("Stage", result['model_stage'])
+            
+            # Mostrar explicación si se solicita
+            if show_explanation:
+                st.markdown("---")
+                st.markdown('<div class="sub-header">🔍 Explicación SHAP</div>', unsafe_allow_html=True)
+                
+                with st.spinner("Calculando valores SHAP..."):
+                    explanation = explain_prediction(property_data)
+                
+                if "error" in explanation:
+                    st.warning(f"⚠️ No se pudo calcular SHAP: {explanation.get('message', explanation['error'])}")
+                else:
+                    if "shap_values" in explanation:
+                        shap_df = pd.DataFrame(explanation['shap_values'])
+                        
+                        # Gráfico de barras SHAP
+                        fig = px.bar(
+                            shap_df.head(10),
+                            x='value',
+                            y='feature',
+                            orientation='h',
+                            title='Top 10 Features - Impacto en la Predicción',
+                            labels={'value': 'Impacto SHAP', 'feature': 'Característica'},
+                            color='value',
+                            color_continuous_scale='RdBu_r'
+                        )
+                        fig.update_layout(height=500)
+                        st.plotly_chart(fig, use_container_width=True)
+                        
+                        # Tabla detallada
+                        st.markdown("**Valores Detallados:**")
+                        st.dataframe(shap_df, use_container_width=True)
+                    else:
+                        st.info(explanation.get('message', 'SHAP no disponible para este tipo de modelo'))
+
+
+# ==================== PÁGINA: HISTORIAL DE MODELOS ====================
+elif menu == "📊 Historial de Modelos":
+    st.markdown('<div class="main-header">📊 Historial de Modelos Entrenados</div>', unsafe_allow_html=True)
+    
+    st.markdown('<div class="info-box">📜 Aquí puedes ver todos los modelos entrenados, sus métricas y etapas de despliegue.</div>', unsafe_allow_html=True)
+    
+    with st.spinner("Cargando historial de modelos..."):
+        history = get_models_history()
+    
+    if not history:
+        st.error("❌ No se pudo obtener el historial de modelos")
+        st.stop()
+    
+    st.markdown(f"### Total de versiones: **{history['total_versions']}**")
+    
+    if history['total_versions'] == 0:
+        st.warning("⚠️ No hay modelos registrados aún. Ejecuta el DAG de entrenamiento en Airflow.")
+        st.stop()
+    
+    # Métricas de resumen
+    models = history['history']
+    production_models = [m for m in models if m['stage'] == 'Production']
+    
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Modelos", history['total_versions'])
+    col2.metric("En Producción", len(production_models))
+    col3.metric("Última Versión", models[0]['version'] if models else "N/A")
+    col4.metric("Stage Actual", models[0]['stage'] if models else "N/A")
+    
+    st.markdown("---")
+    
+    # Tabla de modelos
+    st.markdown('<div class="sub-header">📋 Tabla de Modelos</div>', unsafe_allow_html=True)
+    
+    models_df = pd.DataFrame([
+        {
+            "Versión": m['version'],
+            "Stage": m['stage'],
+            "RMSE": f"{m['metrics'].get('rmse', 0):.2f}" if m['metrics'].get('rmse') else "N/A",
+            "MAE": f"{m['metrics'].get('mae', 0):.2f}" if m['metrics'].get('mae') else "N/A",
+            "R²": f"{m['metrics'].get('r2', 0):.4f}" if m['metrics'].get('r2') else "N/A",
+            "MAPE": f"{m['metrics'].get('mape', 0):.2f}%" if m['metrics'].get('mape') else "N/A",
+            "Fecha Creación": datetime.fromtimestamp(m['creation_timestamp'] / 1000).strftime("%Y-%m-%d %H:%M"),
+            "Run ID": m['run_id'][:8] + "..."
+        }
+        for m in models
+    ])
+    
+    # Colorear filas según stage
+    def highlight_production(row):
+        if row['Stage'] == 'Production':
+            return ['background-color: #D1FAE5'] * len(row)
+        elif row['Stage'] == 'Staging':
+            return ['background-color: #FEF3C7'] * len(row)
+        else:
+            return [''] * len(row)
+    
+    st.dataframe(
+        models_df.style.apply(highlight_production, axis=1),
+        use_container_width=True,
+        hide_index=True
     )
     
-    return fig
+    st.markdown("---")
+    
+    # Gráficos de evolución de métricas
+    st.markdown('<div class="sub-header">📈 Evolución de Métricas</div>', unsafe_allow_html=True)
+    
+    # Preparar datos para gráficos
+    metrics_data = []
+    for m in reversed(models):  # Orden cronológico
+        if m['metrics'].get('rmse') is not None:
+            metrics_data.append({
+                'Versión': f"v{m['version']}",
+                'RMSE': m['metrics'].get('rmse', 0),
+                'MAE': m['metrics'].get('mae', 0),
+                'R²': m['metrics'].get('r2', 0),
+                'MAPE': m['metrics'].get('mape', 0),
+                'Stage': m['stage']
+            })
+    
+    if metrics_data:
+        metrics_df = pd.DataFrame(metrics_data)
+        
+            col_a, col_b = st.columns(2)
+            
+            with col_a:
+            # RMSE
+            fig_rmse = px.line(
+                metrics_df,
+                x='Versión',
+                y='RMSE',
+                markers=True,
+                title='Evolución RMSE (menor es mejor)',
+                color='Stage',
+                color_discrete_map={'Production': '#10B981', 'Staging': '#F59E0B', 'None': '#6B7280'}
+            )
+            fig_rmse.update_layout(height=400)
+            st.plotly_chart(fig_rmse, use_container_width=True)
+            
+            # R²
+            fig_r2 = px.line(
+                metrics_df,
+                x='Versión',
+                y='R²',
+                markers=True,
+                title='Evolución R² (mayor es mejor)',
+                color='Stage',
+                color_discrete_map={'Production': '#10B981', 'Staging': '#F59E0B', 'None': '#6B7280'}
+            )
+            fig_r2.update_layout(height=400)
+            st.plotly_chart(fig_r2, use_container_width=True)
+        
+        with col_b:
+            # MAE
+            fig_mae = px.line(
+                metrics_df,
+                x='Versión',
+                y='MAE',
+                markers=True,
+                title='Evolución MAE (menor es mejor)',
+                color='Stage',
+                color_discrete_map={'Production': '#10B981', 'Staging': '#F59E0B', 'None': '#6B7280'}
+            )
+            fig_mae.update_layout(height=400)
+            st.plotly_chart(fig_mae, use_container_width=True)
+            
+            # MAPE
+            fig_mape = px.line(
+                metrics_df,
+                x='Versión',
+                y='MAPE',
+                markers=True,
+                title='Evolución MAPE % (menor es mejor)',
+                color='Stage',
+                color_discrete_map={'Production': '#10B981', 'Staging': '#F59E0B', 'None': '#6B7280'}
+            )
+            fig_mape.update_layout(height=400)
+            st.plotly_chart(fig_mape, use_container_width=True)
+    
+    # Comparación de modelos
+    st.markdown("---")
+    st.markdown('<div class="sub-header">⚖️ Comparación de Modelos</div>', unsafe_allow_html=True)
+    
+    if len(metrics_data) >= 2:
+        col_x, col_y = st.columns(2)
+        
+        with col_x:
+            version_a = st.selectbox("Modelo A", [m['Versión'] for m in metrics_data], index=0)
+        with col_y:
+            version_b = st.selectbox("Modelo B", [m['Versión'] for m in metrics_data], index=min(1, len(metrics_data)-1))
+        
+        model_a = next(m for m in metrics_data if m['Versión'] == version_a)
+        model_b = next(m for m in metrics_data if m['Versión'] == version_b)
+        
+        comparison_df = pd.DataFrame({
+            'Métrica': ['RMSE', 'MAE', 'R²', 'MAPE'],
+            version_a: [model_a['RMSE'], model_a['MAE'], model_a['R²'], model_a['MAPE']],
+            version_b: [model_b['RMSE'], model_b['MAE'], model_b['R²'], model_b['MAPE']],
+            'Diferencia': [
+                model_a['RMSE'] - model_b['RMSE'],
+                model_a['MAE'] - model_b['MAE'],
+                model_a['R²'] - model_b['R²'],
+                model_a['MAPE'] - model_b['MAPE']
+            ]
+        })
+        
+        fig_comp = go.Figure()
+        fig_comp.add_trace(go.Bar(name=version_a, x=comparison_df['Métrica'], y=comparison_df[version_a]))
+        fig_comp.add_trace(go.Bar(name=version_b, x=comparison_df['Métrica'], y=comparison_df[version_b]))
+        fig_comp.update_layout(barmode='group', title='Comparación de Métricas', height=400)
+        st.plotly_chart(fig_comp, use_container_width=True)
 
 
-def plot_shap_force(shap_values: List[float], feature_names: List[str], base_value: float):
-    """
-    Crea gráfico tipo force plot simplificado
+# ==================== PÁGINA: EXPLICABILIDAD SHAP ====================
+elif menu == "🔍 Explicabilidad (SHAP)":
+    st.markdown('<div class="main-header">🔍 Explicabilidad con SHAP</div>', unsafe_allow_html=True)
     
-    Args:
-        shap_values: Valores SHAP
-        feature_names: Nombres de features
-        base_value: Valor base
-    """
-    # Top features positivas y negativas
-    df = pd.DataFrame({
-        'Feature': feature_names,
-        'SHAP Value': shap_values
-    })
+    st.markdown('<div class="info-box">🧠 SHAP (SHapley Additive exPlanations) ayuda a entender cómo cada característica contribuye a la predicción del modelo.</div>', unsafe_allow_html=True)
     
-    positive = df[df['SHAP Value'] > 0].nlargest(10, 'SHAP Value')
-    negative = df[df['SHAP Value'] < 0].nsmallest(10, 'SHAP Value')
+    if not health or not health.get("model_loaded"):
+        st.warning("⚠️ El modelo no está disponible.")
+        st.stop()
     
-    fig = go.Figure()
+    st.markdown("### 🎯 Realizar Predicción y Obtener Explicación")
     
-    # Features positivas (aumentan predicción)
-    fig.add_trace(go.Bar(
-        name='Increases Risk',
-        y=positive['Feature'],
-        x=positive['SHAP Value'],
-        orientation='h',
-        marker=dict(color='red'),
-        text=[f"+{v:.3f}" for v in positive['SHAP Value']],
-        textposition='auto'
-    ))
-    
-    # Features negativas (disminuyen predicción)
-    fig.add_trace(go.Bar(
-        name='Decreases Risk',
-        y=negative['Feature'],
-        x=negative['SHAP Value'],
-        orientation='h',
-        marker=dict(color='green'),
-        text=[f"{v:.3f}" for v in negative['SHAP Value']],
-        textposition='auto'
-    ))
-    
-    fig.update_layout(
-        title=f"Feature Impact on Prediction<br><sub>Base value: {base_value:.3f}</sub>",
-        xaxis_title="SHAP Value",
-        yaxis_title="Feature",
-        barmode='relative',
-        height=500
-    )
-    
-    return fig
-
-
-st.markdown('<p class="main-header">🏥 MLOps Diabetes Readmission Prediction</p>', unsafe_allow_html=True)
-
-with st.sidebar:
-    st.header("ℹ️ Model Information")
-    
-    model_info = get_model_info()
-    if model_info:
-        st.success("✅ Model Loaded")
-        st.metric("Model Name", model_info.get('model_name', 'N/A'))
-        st.metric("Version", model_info.get('model_version', 'N/A'))
-        st.metric("Stage", model_info.get('stage', 'N/A'))
-    else:
-        st.error("❌ Model Not Available")
-    
-    st.divider()
-    
-    st.header("📊 API Status")
-    if check_api_health():
-        st.success("✅ API Connected")
-    else:
-        st.error("❌ API Unavailable")
-    
-    st.divider()
-    
-    st.markdown("### About")
-    st.markdown("""
-    This application predicts hospital readmission risk for diabetic patients.
-    
-    **Model**: Dynamic loading from MLflow Production
-    
-    **Features**:
-    - Single patient prediction
-    - Batch predictions via CSV
-    - Model explainability
-    """)
-
-tab1, tab2, tab3, tab4 = st.tabs(["🔍 Single Prediction", "📊 Batch Prediction", "🧠 SHAP Explainability", "📈 Analytics"])
-
-with tab1:
-    st.header("Individual Patient Prediction")
-    
+    # Formulario simplificado
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("Patient Information")
-        
-        with st.form("patient_form"):
-            col_a, col_b = st.columns(2)
-            
-            with col_a:
-                age_numeric = st.number_input("Age", min_value=0, max_value=100, value=55)
-                time_in_hospital = st.number_input("Days in Hospital", min_value=1, max_value=14, value=3)
-                num_lab_procedures = st.number_input("Lab Procedures", min_value=0, value=45)
-                num_procedures = st.number_input("Procedures", min_value=0, max_value=10, value=1)
-                num_medications = st.number_input("Medications", min_value=0, value=15)
-                number_outpatient = st.number_input("Outpatient Visits", min_value=0, value=0)
-                number_emergency = st.number_input("Emergency Visits", min_value=0, value=0)
-                number_inpatient = st.number_input("Inpatient Visits", min_value=0, value=0)
-                number_diagnoses = st.number_input("Diagnoses", min_value=1, max_value=16, value=9)
-                num_diabetes_meds = st.number_input("Diabetes Meds", min_value=0, value=2)
-                gender_encoded = st.selectbox("Gender", [0, 1], format_func=lambda x: "Female" if x == 0 else "Male")
-            
-            with col_b:
-                max_glu_serum_encoded = st.selectbox("Max Glucose", [0, 1, 2, 3], format_func=lambda x: ["None", "Norm", ">200", ">300"][x])
-                a1cresult_encoded = st.selectbox("A1C Result", [0, 1, 2, 3], format_func=lambda x: ["None", "Norm", ">7", ">8"][x])
-                change_encoded = st.selectbox("Change in Meds", [0, 1], format_func=lambda x: "No" if x == 0 else "Yes")
-                diabetesmed_encoded = st.selectbox("Diabetes Med", [0, 1], format_func=lambda x: "No" if x == 0 else "Yes")
-                race_encoded = st.number_input("Race", min_value=0, max_value=5, value=2)
-                admission_type_encoded = st.number_input("Admission Type", min_value=0, max_value=7, value=1)
-                discharge_disposition_encoded = st.number_input("Discharge Disposition", min_value=0, max_value=28, value=1)
-                admission_source_encoded = st.number_input("Admission Source", min_value=0, max_value=25, value=7)
-                payer_code_encoded = st.number_input("Payer Code", min_value=0, max_value=22, value=5)
-                medical_specialty_encoded = st.number_input("Medical Specialty", min_value=0, max_value=83, value=12)
-                diag_1_encoded = st.number_input("Primary Diagnosis", min_value=0, value=250)
-            
-            predict_button = st.form_submit_button("🔮 Predict", type="primary")
+        bed = st.number_input("Habitaciones", 0, 20, 3)
+        bath = st.number_input("Baños", 0.0, 10.0, 2.0, 0.5)
+        house_size = st.number_input("Tamaño Casa (sq ft)", 0, 10000, 1500, 100)
+        acre_lot = st.number_input("Tamaño Terreno (acres)", 0.0, 10.0, 0.25, 0.05)
+        city = st.text_input("Ciudad", "Miami")
     
     with col2:
-        st.subheader("Prediction Result")
+        state = st.text_input("Estado", "Florida")
+        zip_code = st.text_input("Código Postal", "33101")
+        status = st.selectbox("Estado Propiedad", ["for_sale", "ready_to_build"])
+        brokered_by = st.text_input("Agencia", "Century 21")
+        street = st.text_input("Calle", "123 Main St")
+    
+    if st.button("🔍 Analizar con SHAP", type="primary"):
+        property_data = {
+            "brokered_by": brokered_by,
+            "status": status,
+            "bed": bed,
+            "bath": bath,
+            "acre_lot": acre_lot,
+            "street": street,
+            "city": city,
+            "state": state,
+            "zip_code": zip_code,
+            "house_size": house_size,
+            "prev_sold_date": None
+        }
         
-        if predict_button:
-            patient_data = {
-                "age_numeric": age_numeric,
-                "time_in_hospital": time_in_hospital,
-                "num_lab_procedures": num_lab_procedures,
-                "num_procedures": num_procedures,
-                "num_medications": num_medications,
-                "number_outpatient": number_outpatient,
-                "number_emergency": number_emergency,
-                "number_inpatient": number_inpatient,
-                "number_diagnoses": number_diagnoses,
-                "max_glu_serum_encoded": max_glu_serum_encoded,
-                "a1cresult_encoded": a1cresult_encoded,
-                "change_encoded": change_encoded,
-                "diabetesmed_encoded": diabetesmed_encoded,
-                "num_diabetes_meds": num_diabetes_meds,
-                "gender_encoded": gender_encoded,
-                "race_encoded": race_encoded,
-                "admission_type_encoded": admission_type_encoded,
-                "discharge_disposition_encoded": discharge_disposition_encoded,
-                "admission_source_encoded": admission_source_encoded,
-                "payer_code_encoded": payer_code_encoded,
-                "medical_specialty_encoded": medical_specialty_encoded,
-                "diag_1_encoded": diag_1_encoded
-            }
-            
-            with st.spinner("Making prediction..."):
-                result = predict_single(patient_data)
-            
-            if "error" in result:
-                st.error(f"Error: {result['error']}")
-            else:
-                prediction = result.get('prediction', 0)
-                readmission_map = {0: "NO", 1: "<30 days", 2: ">30 days"}
-                pred_label = readmission_map.get(prediction, "Unknown")
-                
-                if prediction == 0:
-                    st.success(f"✅ Readmission Risk: **{pred_label}**")
-                elif prediction == 1:
-                    st.warning(f"⚠️ Readmission Risk: **{pred_label}**")
-                else:
-                    st.info(f"ℹ️ Readmission Risk: **{pred_label}**")
-                
-                st.metric("Model Version", result.get('model_version', 'N/A'))
-
-with tab2:
-    st.header("Batch Prediction")
-    
-    st.markdown("""
-    Upload a CSV file with patient data to get predictions for multiple patients.
-    
-    **Required columns**: age_numeric, time_in_hospital, num_lab_procedures, num_procedures, num_medications, 
-    number_outpatient, number_emergency, number_inpatient, number_diagnoses, max_glu_serum_encoded, 
-    a1cresult_encoded, change_encoded, diabetesmed_encoded, num_diabetes_meds, gender_encoded, race_encoded, 
-    admission_type_encoded, discharge_disposition_encoded, admission_source_encoded, payer_code_encoded, 
-    medical_specialty_encoded, diag_1_encoded
-    """)
-    
-    uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
-    
-    if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file)
-        st.write("Preview of uploaded data:")
-        st.dataframe(df.head())
+        with st.spinner("🔮 Calculando explicación SHAP..."):
+            explanation = explain_prediction(property_data)
         
-        if st.button("🔮 Predict Batch"):
-            with st.spinner("Making predictions..."):
-                result = predict_batch(df)
+        if "error" in explanation:
+            st.error(f"❌ Error: {explanation.get('message', explanation['error'])}")
+        else:
+            # Predicción
+            st.markdown('<div class="prediction-box">', unsafe_allow_html=True)
+            st.markdown(f"Precio Predicho: ${explanation['predicted_price']:,.2f}")
+            st.markdown('</div>', unsafe_allow_html=True)
             
-            if "error" in result:
-                st.error(f"Error: {result['error']}")
-            else:
-                predictions = result.get('predictions', [])
-                results_df = pd.DataFrame(predictions)
-                st.success(f"✅ Predictions completed: {len(predictions)} patients")
-                st.dataframe(results_df)
+            if "shap_values" in explanation:
+                st.markdown("---")
+                st.markdown('<div class="sub-header">📊 Valores SHAP</div>', unsafe_allow_html=True)
                 
-                csv = results_df.to_csv(index=False)
-                st.download_button(
-                    label="📥 Download Results",
-                    data=csv,
-                    file_name="predictions.csv",
-                    mime="text/csv"
+                shap_df = pd.DataFrame(explanation['shap_values'])
+                
+                # Valor base
+                st.info(f"📍 **Valor Base del Modelo:** ${explanation.get('base_value', 0):,.2f}")
+                
+                # Gráfico principal SHAP
+                fig = px.bar(
+                    shap_df.head(15),
+                    x='value',
+                    y='feature',
+                    orientation='h',
+                    title='Impacto de Características en la Predicción (SHAP Values)',
+                    labels={'value': 'Impacto SHAP', 'feature': 'Característica'},
+                    color='value',
+                    color_continuous_scale='RdBu_r',
+                    text='value'
                 )
-
-with tab3:
-    st.header("🧠 SHAP Model Explainability")
-    
-    st.markdown("""
-    **SHAP (SHapley Additive exPlanations)** explains individual predictions by computing the contribution 
-    of each feature to the model's output.
-    
-    - **Positive SHAP values** (red): Feature increases readmission risk
-    - **Negative SHAP values** (green): Feature decreases readmission risk
-    """)
-    
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        st.subheader("Patient Data")
-        
-        with st.form("shap_form"):
-            col_a, col_b = st.columns(2)
-            
-            with col_a:
-                age_shap = st.number_input("Age", min_value=0, max_value=100, value=65, key="age_shap")
-                time_hospital_shap = st.number_input("Days in Hospital", min_value=1, max_value=14, value=5, key="time_shap")
-                num_lab_shap = st.number_input("Lab Procedures", min_value=0, value=50, key="lab_shap")
-                num_proc_shap = st.number_input("Procedures", min_value=0, max_value=10, value=2, key="proc_shap")
-                num_meds_shap = st.number_input("Medications", min_value=0, value=20, key="meds_shap")
-                outpatient_shap = st.number_input("Outpatient Visits", min_value=0, value=1, key="out_shap")
-                emergency_shap = st.number_input("Emergency Visits", min_value=0, value=0, key="emerg_shap")
-                inpatient_shap = st.number_input("Inpatient Visits", min_value=0, value=1, key="inp_shap")
-                diagnoses_shap = st.number_input("Diagnoses", min_value=1, max_value=16, value=9, key="diag_shap")
-                diabetes_meds_shap = st.number_input("Diabetes Meds", min_value=0, value=3, key="dmed_shap")
-                gender_shap = st.selectbox("Gender", [0, 1], format_func=lambda x: "Female" if x == 0 else "Male", key="gender_shap")
-            
-            with col_b:
-                glu_shap = st.selectbox("Max Glucose", [0, 1, 2, 3], format_func=lambda x: ["None", "Norm", ">200", ">300"][x], key="glu_shap")
-                a1c_shap = st.selectbox("A1C Result", [0, 1, 2, 3], format_func=lambda x: ["None", "Norm", ">7", ">8"][x], key="a1c_shap")
-                change_shap = st.selectbox("Change in Meds", [0, 1], format_func=lambda x: "No" if x == 0 else "Yes", key="change_shap")
-                diabetesmed_shap = st.selectbox("Diabetes Med", [0, 1], format_func=lambda x: "No" if x == 0 else "Yes", key="dmed2_shap")
-                race_shap = st.number_input("Race", min_value=0, max_value=5, value=2, key="race_shap")
-                admission_shap = st.number_input("Admission Type", min_value=0, max_value=7, value=1, key="adm_shap")
-                discharge_shap = st.number_input("Discharge Disposition", min_value=0, max_value=28, value=1, key="dis_shap")
-                source_shap = st.number_input("Admission Source", min_value=0, max_value=25, value=7, key="src_shap")
-                payer_shap = st.number_input("Payer Code", min_value=0, max_value=22, value=5, key="pay_shap")
-                specialty_shap = st.number_input("Medical Specialty", min_value=0, max_value=83, value=12, key="spec_shap")
-                diag1_shap = st.number_input("Primary Diagnosis", min_value=0, value=250, key="diag1_shap")
-            
-            explain_button = st.form_submit_button("🔍 Explain Prediction", type="primary")
-    
-    with col2:
-        st.subheader("SHAP Explanation")
-        
-        if explain_button:
-            patient_data_shap = {
-                "age_numeric": age_shap,
-                "time_in_hospital": time_hospital_shap,
-                "num_lab_procedures": num_lab_shap,
-                "num_procedures": num_proc_shap,
-                "num_medications": num_meds_shap,
-                "number_outpatient": outpatient_shap,
-                "number_emergency": emergency_shap,
-                "number_inpatient": inpatient_shap,
-                "number_diagnoses": diagnoses_shap,
-                "max_glu_serum_encoded": glu_shap,
-                "a1cresult_encoded": a1c_shap,
-                "change_encoded": change_shap,
-                "diabetesmed_encoded": diabetesmed_shap,
-                "num_diabetes_meds": diabetes_meds_shap,
-                "gender_encoded": gender_shap,
-                "race_encoded": race_shap,
-                "admission_type_encoded": admission_shap,
-                "discharge_disposition_encoded": discharge_shap,
-                "admission_source_encoded": source_shap,
-                "payer_code_encoded": payer_shap,
-                "medical_specialty_encoded": specialty_shap,
-                "diag_1_encoded": diag1_shap
-            }
-            
-            with st.spinner("Calculating SHAP values..."):
-                # Obtener predicción primero
-                pred_result = predict_single(patient_data_shap)
+                fig.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+                fig.update_layout(height=600)
+                st.plotly_chart(fig, use_container_width=True)
                 
-                if "error" not in pred_result:
-                    prediction = pred_result.get('prediction', 0)
-                    readmission_map = {0: "NO", 1: "<30 days", 2: ">30 days"}
-                    pred_label = readmission_map.get(prediction, "Unknown")
-                    
-                    if prediction == 0:
-                        st.success(f"✅ Readmission Risk: **{pred_label}**")
-                    elif prediction == 1:
-                        st.warning(f"⚠️ Readmission Risk: **{pred_label}**")
+                # Explicación
+                st.markdown("### 💡 Interpretación")
+                st.markdown("""
+                - **Valores positivos (rojos):** Aumentan el precio predicho
+                - **Valores negativos (azules):** Disminuyen el precio predicho
+                - **Magnitud:** Indica el impacto relativo de cada característica
+                """)
+                
+                # Top features
+                st.markdown("### 🏆 Top 5 Características Más Influyentes")
+                top_5 = shap_df.head(5)
+                for idx, row in top_5.iterrows():
+                    impact = "aumenta" if row['value'] > 0 else "disminuye"
+                    st.markdown(f"**{idx+1}. {row['feature']}:** {impact} el precio en **${abs(row['value']):,.2f}**")
+                
+                # Tabla completa
+                st.markdown("---")
+                st.markdown("### 📋 Tabla Completa de Valores SHAP")
+                st.dataframe(shap_df, use_container_width=True, hide_index=True)
                     else:
-                        st.info(f"ℹ️ Readmission Risk: **{pred_label}**")
-                    
-                    # Obtener explicación SHAP
-                    shap_result = get_shap_explanation(patient_data_shap)
-                    
-                    if "error" not in shap_result:
-                        shap_values = shap_result.get('shap_values', [])
-                        feature_names = shap_result.get('feature_names', [])
-                        base_value = shap_result.get('base_value', 0.0)
-                        prediction_value = shap_result.get('prediction', 0.0)
-                        
-                        if shap_values and feature_names:
-                            st.divider()
-                            st.subheader("Feature Importance")
-                            
-                            # Gráfico waterfall
-                            fig_waterfall = plot_shap_waterfall(shap_values, feature_names, base_value, prediction_value)
-                            st.plotly_chart(fig_waterfall, use_container_width=True)
-                            
-                            st.divider()
-                            st.subheader("Impact Direction")
-                            
-                            # Gráfico force
-                            fig_force = plot_shap_force(shap_values, feature_names, base_value)
-                            st.plotly_chart(fig_force, use_container_width=True)
-                            
-                            # Tabla de valores
-                            st.divider()
-                            st.subheader("SHAP Values Table")
-                            shap_df = pd.DataFrame({
-                                'Feature': feature_names,
-                                'SHAP Value': shap_values,
-                                'Absolute Impact': [abs(v) for v in shap_values]
-                            }).sort_values('Absolute Impact', ascending=False)
-                            st.dataframe(shap_df, use_container_width=True)
-                        else:
-                            st.warning("⚠️ SHAP values not available")
-                    else:
-                        st.error(f"❌ SHAP Error: {shap_result['error']}")
-                else:
-                    st.error(f"❌ Prediction Error: {pred_result['error']}")
+                st.warning(explanation.get('message', 'SHAP no disponible para este tipo de modelo'))
 
-with tab4:
-    st.header("Model Analytics")
+
+# ==================== PÁGINA: ESTADÍSTICAS ====================
+elif menu == "📈 Estadísticas":
+    st.markdown('<div class="main-header">📈 Estadísticas de Uso</div>', unsafe_allow_html=True)
     
-    st.info("Analytics dashboard coming soon...")
+    st.markdown('<div class="info-box">📊 Estadísticas de inferencias realizadas por el sistema.</div>', unsafe_allow_html=True)
     
-    st.markdown("""
-    **Future Features**:
-    - Prediction statistics
-    - Feature importance visualization
-    - Model performance metrics
-    - Prediction distribution
-    """)# Footer
-st.divider()
-st.markdown("""
-<div style='text-align: center; color: gray; padding: 2rem;'>
-    <p>MLOps Project - Diabetes Readmission Prediction System</p>
-    <p>Powered by MLflow, FastAPI, and Streamlit</p>
-</div>
-""", unsafe_allow_html=True)
+    with st.spinner("Cargando estadísticas..."):
+        stats = get_inference_stats()
+    
+    if not stats or "error" in stats:
+        st.warning("⚠️ No hay estadísticas disponibles aún o hubo un error al cargarlas.")
+        st.stop()
+    
+    # Métricas principales
+    col1, col2, col3 = st.columns(3)
+    col1.metric("🎯 Total de Inferencias", stats.get('total_inferences', 0))
+    col2.metric("🕐 Últimas 24 horas", stats.get('recent_24h', 0))
+    col3.metric("🤖 Modelos Únicos", len(stats.get('by_model_version', [])))
+    
+    st.markdown("---")
+    
+    # Inferencias por modelo
+    if stats.get('by_model_version'):
+        st.markdown('<div class="sub-header">📊 Inferencias por Versión de Modelo</div>', unsafe_allow_html=True)
+        
+        model_stats_df = pd.DataFrame(stats['by_model_version'])
+        model_stats_df.columns = ['Versión del Modelo', 'Total Inferencias']
+        
+        fig = px.pie(
+            model_stats_df,
+            values='Total Inferencias',
+            names='Versión del Modelo',
+            title='Distribución de Inferencias por Modelo',
+            hole=0.4
+        )
+        fig.update_layout(height=500)
+        st.plotly_chart(fig, use_container_width=True)
+        
+        st.dataframe(model_stats_df, use_container_width=True, hide_index=True)
+    
+    # Estado del sistema
+    st.markdown("---")
+    st.markdown('<div class="sub-header">🔧 Estado del Sistema</div>', unsafe_allow_html=True)
+    
+    if health:
+        col_a, col_b, col_c = st.columns(3)
+        
+        with col_a:
+            st.markdown("**🔌 Conexión API**")
+            st.success("Conectado" if health.get('status') == 'healthy' else "Degradado")
+        
+        with col_b:
+            st.markdown("**🤖 Modelo Cargado**")
+            st.success("Sí" if health.get('model_loaded') else "No")
+        
+        with col_c:
+            st.markdown("**📡 MLflow URI**")
+            st.info(health.get('mlflow_uri', 'N/A'))
+    
+    # Botón para recargar modelo
+    st.markdown("---")
+    if st.button("🔄 Recargar Modelo desde MLflow"):
+        try:
+            response = requests.post(f"{API_URL}/reload-model", timeout=10)
+            if response.status_code == 200:
+                st.success("✅ Modelo recargado exitosamente!")
+                st.rerun()
+            else:
+                st.error("❌ Error al recargar el modelo")
+        except Exception as e:
+            st.error(f"❌ Error: {str(e)}")

@@ -1,0 +1,249 @@
+{{- if .Values.postgresql.raw.enabled -}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-raw-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgresql.raw.storage.size }}
+  storageClassName: {{ .Values.postgresql.raw.storage.storageClass }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-raw
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: {{ .Values.postgresql.raw.port }}
+      targetPort: 5432
+  selector:
+    app: postgres-raw
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-raw
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-raw
+  template:
+    metadata:
+      labels:
+        app: postgres-raw
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.images.postgres.repository }}:{{ .Values.images.postgres.tag }}
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.raw.database }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.raw.username }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.postgresql.raw.password }}
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-raw-pvc
+{{- end }}
+{{- if .Values.postgresql.clean.enabled -}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-clean-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgresql.clean.storage.size }}
+  storageClassName: {{ .Values.postgresql.clean.storage.storageClass }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-clean
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: {{ .Values.postgresql.clean.port }}
+      targetPort: 5432
+  selector:
+    app: postgres-clean
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-clean
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-clean
+  template:
+    metadata:
+      labels:
+        app: postgres-clean
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.images.postgres.repository }}:{{ .Values.images.postgres.tag }}
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.clean.database }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.clean.username }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.postgresql.clean.password }}
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-clean-pvc
+{{- end }}
+{{- if .Values.postgresql.airflow.enabled -}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-airflow-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgresql.airflow.storage.size }}
+  storageClassName: {{ .Values.postgresql.airflow.storage.storageClass }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-airflow
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: {{ .Values.postgresql.airflow.port }}
+      targetPort: 5432
+  selector:
+    app: postgres-airflow
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-airflow
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-airflow
+  template:
+    metadata:
+      labels:
+        app: postgres-airflow
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.images.postgres.repository }}:{{ .Values.images.postgres.tag }}
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.airflow.database }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.airflow.username }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.postgresql.airflow.password }}
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-airflow-pvc
+{{- end }}
+{{- if .Values.postgresql.mlflow.enabled -}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-mlflow-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgresql.mlflow.storage.size }}
+  storageClassName: {{ .Values.postgresql.mlflow.storage.storageClass }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-mlflow
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: {{ .Values.postgresql.mlflow.port }}
+      targetPort: 5432
+  selector:
+    app: postgres-mlflow
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-mlflow
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-mlflow
+  template:
+    metadata:
+      labels:
+        app: postgres-mlflow
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.images.postgres.repository }}:{{ .Values.images.postgres.tag }}
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.mlflow.database }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.mlflow.username }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.postgresql.mlflow.password }}
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-mlflow-pvc
+{{- end }}
+

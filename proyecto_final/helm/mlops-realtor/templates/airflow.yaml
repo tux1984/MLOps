@@ -1,0 +1,220 @@
+{{- if .Values.airflow.enabled -}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: airflow-logs-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.airflow.volumes.logs.size }}
+  storageClassName: {{ .Values.airflow.volumes.logs.storageClass }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: airflow-dags-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.airflow.volumes.dags.size }}
+  storageClassName: {{ .Values.airflow.volumes.dags.storageClass }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: airflow-config
+  namespace: {{ .Values.namespace }}
+data:
+  {{- range $key, $value := .Values.airflow.env }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: airflow
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.airflow.service.type }}
+  ports:
+    - port: {{ .Values.airflow.service.port }}
+      targetPort: 8080
+      {{- if eq .Values.airflow.service.type "NodePort" }}
+      nodePort: {{ .Values.airflow.service.nodePort }}
+      {{- end }}
+  selector:
+    app: airflow
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: airflow
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.airflow.replicas }}
+  selector:
+    matchLabels:
+      app: airflow
+  template:
+    metadata:
+      labels:
+        app: airflow
+    spec:
+      initContainers:
+        - name: init-airflow-db
+          image: {{ .Values.images.airflow.repository }}:{{ .Values.images.airflow.tag }}
+          command: ["airflow", "db", "init"]
+          envFrom:
+            - configMapRef:
+                name: airflow-config
+          env:
+            - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+              value: "postgresql+psycopg2://{{ .Values.airflow.database.username }}:{{ .Values.airflow.database.password }}@{{ .Values.airflow.database.host }}:{{ .Values.airflow.database.port }}/{{ .Values.airflow.database.database }}"
+        
+        - name: create-admin-user
+          image: {{ .Values.images.airflow.repository }}:{{ .Values.images.airflow.tag }}
+          command:
+            - /bin/bash
+            - -c
+            - |
+              airflow users create \
+                --username {{ .Values.airflow.adminUser.username }} \
+                --firstname Admin \
+                --lastname User \
+                --role Admin \
+                --email {{ .Values.airflow.adminUser.email }} \
+                --password {{ .Values.airflow.adminUser.password }} || true
+          envFrom:
+            - configMapRef:
+                name: airflow-config
+          env:
+            - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+              value: "postgresql+psycopg2://{{ .Values.airflow.database.username }}:{{ .Values.airflow.database.password }}@{{ .Values.airflow.database.host }}:{{ .Values.airflow.database.port }}/{{ .Values.airflow.database.database }}"
+      
+      containers:
+        {{- if .Values.airflow.gitSync.enabled }}
+        # Git-sync sidecar for DAGs (BONO requirement)
+        - name: git-sync
+          image: {{ .Values.images.gitSync.repository }}:{{ .Values.images.gitSync.tag }}
+          args:
+            - --repo={{ .Values.airflow.gitSync.repo }}
+            - --branch={{ .Values.airflow.gitSync.branch }}
+            - --root=/dags
+            - --dest=repo
+            - --wait={{ .Values.airflow.gitSync.period }}
+            - --max-sync-failures={{ .Values.airflow.gitSync.maxSyncFailures }}
+            {{- if .Values.airflow.gitSync.subPath }}
+            - --submodules=recursive
+            {{- end }}
+          volumeMounts:
+            - name: dags
+              mountPath: /dags
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+        {{- end }}
+        
+        # Airflow Webserver
+        - name: airflow-webserver
+          image: {{ .Values.images.airflow.repository }}:{{ .Values.images.airflow.tag }}
+          command: ["airflow", "webserver"]
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: airflow-config
+          env:
+            - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+              value: "postgresql+psycopg2://{{ .Values.airflow.database.username }}:{{ .Values.airflow.database.password }}@{{ .Values.airflow.database.host }}:{{ .Values.airflow.database.port }}/{{ .Values.airflow.database.database }}"
+            - name: AIRFLOW__CORE__EXECUTOR
+              value: {{ .Values.airflow.executor }}
+            - name: AIRFLOW__CORE__LOAD_EXAMPLES
+              value: "False"
+            - name: AIRFLOW__CORE__DAGS_FOLDER
+              {{- if .Values.airflow.gitSync.enabled }}
+              value: "/dags/repo/{{ .Values.airflow.gitSync.subPath }}"
+              {{- else }}
+              value: "/opt/airflow/dags"
+              {{- end }}
+          volumeMounts:
+            - name: logs
+              mountPath: /opt/airflow/logs
+            - name: dags
+              mountPath: /dags
+          resources:
+            requests:
+              memory: {{ .Values.airflow.resources.requests.memory }}
+              cpu: {{ .Values.airflow.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.airflow.resources.limits.memory }}
+              cpu: {{ .Values.airflow.resources.limits.cpu }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+        
+        # Airflow Scheduler
+        - name: airflow-scheduler
+          image: {{ .Values.images.airflow.repository }}:{{ .Values.images.airflow.tag }}
+          command: ["airflow", "scheduler"]
+          envFrom:
+            - configMapRef:
+                name: airflow-config
+          env:
+            - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+              value: "postgresql+psycopg2://{{ .Values.airflow.database.username }}:{{ .Values.airflow.database.password }}@{{ .Values.airflow.database.host }}:{{ .Values.airflow.database.port }}/{{ .Values.airflow.database.database }}"
+            - name: AIRFLOW__CORE__EXECUTOR
+              value: {{ .Values.airflow.executor }}
+            - name: AIRFLOW__CORE__LOAD_EXAMPLES
+              value: "False"
+            - name: AIRFLOW__CORE__DAGS_FOLDER
+              {{- if .Values.airflow.gitSync.enabled }}
+              value: "/dags/repo/{{ .Values.airflow.gitSync.subPath }}"
+              {{- else }}
+              value: "/opt/airflow/dags"
+              {{- end }}
+          volumeMounts:
+            - name: logs
+              mountPath: /opt/airflow/logs
+            - name: dags
+              mountPath: /dags
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1"
+      
+      volumes:
+        - name: logs
+          persistentVolumeClaim:
+            claimName: airflow-logs-pvc
+        - name: dags
+          {{- if .Values.airflow.gitSync.enabled }}
+          emptyDir: {}
+          {{- else }}
+          persistentVolumeClaim:
+            claimName: airflow-dags-pvc
+          {{- end }}
+{{- end }}
+

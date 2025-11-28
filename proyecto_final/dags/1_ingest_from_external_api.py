@@ -115,13 +115,17 @@ def fetch_data_from_api(**context) -> dict:
     endpoint = f"{API_URL}/data"
     
     # Parámetros del request
+    # La API espera el día de la semana (Tuesday o Wednesday)
+    # Usamos Tuesday para grupo 3
+    day = "Tuesday" if GROUP_NUMBER == 3 else "Wednesday"
+    
     params = {
-        'group': GROUP_NUMBER,
-        'request': request_count
+        'group_number': GROUP_NUMBER,
+        'day': day
     }
     
     logger.info(f"Fetching data from API: {endpoint}")
-    logger.info(f"Parameters: group={GROUP_NUMBER}, request={request_count}")
+    logger.info(f"Parameters: group_number={GROUP_NUMBER}, day={day}, request_count={request_count}")
     
     start_time = time.time()
     
@@ -153,22 +157,32 @@ def fetch_data_from_api(**context) -> dict:
         
         # Validar respuesta
         if response.status_code == 200:
-            data = response.json()
+            api_data = response.json()
             logger.info(f"API request successful. Execution time: {execution_time:.2f}s")
-            logger.info(f"Data keys: {list(data.keys())}")
+            logger.info(f"API response keys: {list(api_data.keys())}")
+            
+            # La API devuelve un solo array 'data', necesitamos dividirlo en train/val/test
+            all_data = api_data.get('data', [])
+            total_records = len(all_data)
+            logger.info(f"Total records received: {total_records}")
+            
+            # Dividir datos: 70% train, 15% validation, 15% test
+            train_end = int(len(all_data) * 0.70)
+            val_end = int(len(all_data) * 0.85)
+            
+            data = {
+                'train': all_data[:train_end],
+                'validation': all_data[train_end:val_end],
+                'test': all_data[val_end:],
+                'batch_number': api_data.get('batch_number', request_count)
+            }
+            
+            logger.info(f"Split: train={len(data['train'])}, validation={len(data['validation'])}, test={len(data['test'])}")
             
             # Actualizar log con detalles
             conn = get_raw_db_connection()
             cur = conn.cursor()
             try:
-                total_records = 0
-                if 'train' in data:
-                    total_records += len(data['train'])
-                if 'validation' in data:
-                    total_records += len(data['validation'])
-                if 'test' in data:
-                    total_records += len(data['test'])
-                
                 cur.execute("""
                     UPDATE api_request_log
                     SET num_records = %s

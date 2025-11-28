@@ -1,0 +1,193 @@
+{{- if .Values.prometheus.enabled -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: {{ .Values.namespace }}
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    scrape_configs:
+      {{- range .Values.prometheus.scrapeConfigs }}
+      - job_name: {{ .job_name | quote }}
+        static_configs:
+          {{- range .static_configs }}
+          - targets: {{ .targets | toJson }}
+          {{- end }}
+      {{- end }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.prometheus.storage.size }}
+  storageClassName: {{ .Values.prometheus.storage.storageClass }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.prometheus.service.type }}
+  ports:
+    - port: {{ .Values.prometheus.service.port }}
+      targetPort: 9090
+      {{- if eq .Values.prometheus.service.type "NodePort" }}
+      nodePort: {{ .Values.prometheus.service.nodePort }}
+      {{- end }}
+  selector:
+    app: prometheus
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.prometheus.replicas }}
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: {{ .Values.images.prometheus.repository }}:{{ .Values.images.prometheus.tag }}
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.path=/prometheus
+          ports:
+            - containerPort: 9090
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+            - name: storage
+              mountPath: /prometheus
+          resources:
+            requests:
+              memory: {{ .Values.prometheus.resources.requests.memory }}
+              cpu: {{ .Values.prometheus.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.prometheus.resources.limits.memory }}
+              cpu: {{ .Values.prometheus.resources.limits.cpu }}
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-config
+        - name: storage
+          persistentVolumeClaim:
+            claimName: prometheus-pvc
+{{- end }}
+{{- if .Values.grafana.enabled -}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.grafana.storage.size }}
+  storageClassName: {{ .Values.grafana.storage.storageClass }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.grafana.service.type }}
+  ports:
+    - port: {{ .Values.grafana.service.port }}
+      targetPort: 3000
+      {{- if eq .Values.grafana.service.type "NodePort" }}
+      nodePort: {{ .Values.grafana.service.nodePort }}
+      {{- end }}
+  selector:
+    app: grafana
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.grafana.replicas }}
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: {{ .Values.images.grafana.repository }}:{{ .Values.images.grafana.tag }}
+          ports:
+            - containerPort: 3000
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              value: {{ .Values.grafana.adminUser | quote }}
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              value: {{ .Values.grafana.adminPassword | quote }}
+            - name: GF_PATHS_PROVISIONING
+              value: /etc/grafana/provisioning
+          volumeMounts:
+            - name: storage
+              mountPath: /var/lib/grafana
+            {{- if .Values.grafana.dashboards.enabled }}
+            - name: dashboard-providers
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: dashboard-mlops-overview
+              mountPath: /etc/grafana/provisioning/dashboards/mlops-overview.json
+              subPath: mlops-overview.json
+            - name: dashboard-model-performance
+              mountPath: /etc/grafana/provisioning/dashboards/model-performance.json
+              subPath: model-performance.json
+            {{- end }}
+          resources:
+            requests:
+              memory: {{ .Values.grafana.resources.requests.memory }}
+              cpu: {{ .Values.grafana.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.grafana.resources.limits.memory }}
+              cpu: {{ .Values.grafana.resources.limits.cpu }}
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            claimName: grafana-pvc
+        {{- if .Values.grafana.dashboards.enabled }}
+        - name: dashboard-providers
+          configMap:
+            name: grafana-dashboard-providers
+        - name: datasources
+          configMap:
+            name: grafana-dashboard-datasources
+        - name: dashboard-mlops-overview
+          configMap:
+            name: grafana-dashboard-mlops-overview
+        - name: dashboard-model-performance
+          configMap:
+            name: grafana-dashboard-model-performance
+        {{- end }}
+{{- end }}

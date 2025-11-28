@@ -1,0 +1,403 @@
+# =================================================================
+# MLOps Realtor - HELM Values
+# Sistema completo de MLOps para predicción de precios inmobiliarios
+# =================================================================
+
+# Namespace
+namespace: mlops
+
+# Imágenes de contenedores
+images:
+  # Bases de datos
+  postgres:
+    repository: postgres
+    tag: "15-alpine"
+    pullPolicy: IfNotPresent
+  
+  # MinIO (S3-compatible storage)
+  minio:
+    repository: minio/minio
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
+  # MLflow
+  mlflow:
+    repository: <your-dockerhub-username>/mlops-mlflow
+    tag: "latest"
+    pullPolicy: Always
+  
+  # Airflow
+  airflow:
+    repository: <your-dockerhub-username>/mlops-airflow
+    tag: "latest"
+    pullPolicy: Always
+  
+  # Git-sync para Airflow DAGs
+  gitSync:
+    repository: k8s.gcr.io/git-sync/git-sync
+    tag: "v3.6.3"
+    pullPolicy: IfNotPresent
+  
+  # API
+  api:
+    repository: <your-dockerhub-username>/mlops-api
+    tag: "latest"
+    pullPolicy: Always
+  
+  # Frontend
+  frontend:
+    repository: <your-dockerhub-username>/mlops-frontend
+    tag: "latest"
+    pullPolicy: Always
+  
+  # Observability
+  prometheus:
+    repository: prom/prometheus
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
+  grafana:
+    repository: grafana/grafana
+    tag: "latest"
+    pullPolicy: IfNotPresent
+
+# =================================================================
+# PostgreSQL Databases
+# =================================================================
+postgresql:
+  # Base de datos RAW
+  raw:
+    enabled: true
+    database: mlops_raw
+    username: mlops
+    password: mlops123
+    port: 5432
+    storage:
+      size: 5Gi
+      storageClass: standard
+  
+  # Base de datos CLEAN
+  clean:
+    enabled: true
+    database: mlops_clean
+    username: mlops
+    password: mlops123
+    port: 5433
+    storage:
+      size: 5Gi
+      storageClass: standard
+  
+  # Base de datos Airflow Metadata
+  airflow:
+    enabled: true
+    database: airflow_metadata
+    username: airflow
+    password: airflow123
+    port: 5434
+    storage:
+      size: 3Gi
+      storageClass: standard
+  
+  # Base de datos MLflow Metadata
+  mlflow:
+    enabled: true
+    database: mlflow_metadata
+    username: mlflow
+    password: mlflow123
+    port: 5435
+    storage:
+      size: 3Gi
+      storageClass: standard
+
+# =================================================================
+# MinIO (S3-compatible storage para MLflow artifacts)
+# =================================================================
+minio:
+  enabled: true
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucketName: mlflow
+  autoCreateBucket: true
+  storage:
+    size: 10Gi
+    storageClass: standard
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  service:
+    apiPort: 9000
+    consolePort: 9001
+    type: NodePort
+    apiNodePort: 30900
+    consoleNodePort: 30901
+
+# =================================================================
+# MLflow
+# =================================================================
+mlflow:
+  enabled: true
+  replicas: 1
+  trackingUri: "http://mlflow:5000"
+  artifactRoot: "s3://mlflow/artifacts"
+  backend:
+    storeUri: "postgresql://mlflow:mlflow123@postgres-mlflow:5432/mlflow_metadata"
+  s3:
+    endpointUrl: "http://minio:9000"
+    accessKey: minioadmin
+    secretKey: minioadmin
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1"
+  service:
+    port: 5000
+    type: NodePort
+    nodePort: 30500
+
+# =================================================================
+# Airflow
+# =================================================================
+airflow:
+  enabled: true
+  executor: LocalExecutor
+  replicas: 1
+  adminUser:
+    username: admin
+    password: admin
+    email: admin@mlops.com
+  
+  # Git-sync para DAGs (BONO)
+  gitSync:
+    enabled: true
+    repo: "https://github.com/<your-repo>/mlops-realtor.git"
+    branch: "master"
+    subPath: "dags"
+    period: "60s"  # Sync cada 60 segundos
+    maxSyncFailures: 5
+  
+  # Configuración de base de datos
+  database:
+    host: postgres-airflow
+    port: 5432
+    database: airflow_metadata
+    username: airflow
+    password: airflow123
+  
+  # Variables de entorno
+  env:
+    MLFLOW_TRACKING_URI: "http://mlflow:5000"
+    RAW_DB_HOST: "postgres-raw"
+    RAW_DB_PORT: "5432"
+    RAW_DB_NAME: "mlops_raw"
+    RAW_DB_USER: "mlops"
+    RAW_DB_PASSWORD: "mlops123"
+    CLEAN_DB_HOST: "postgres-clean"
+    CLEAN_DB_PORT: "5432"
+    CLEAN_DB_NAME: "mlops_clean"
+    CLEAN_DB_USER: "mlops"
+    CLEAN_DB_PASSWORD: "mlops123"
+    API_BASE_URL: "http://10.43.100.103:8000"
+    GROUP_NUMBER: "3"
+  
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "1"
+    limits:
+      memory: "4Gi"
+      cpu: "2"
+  
+  service:
+    port: 8080
+    type: NodePort
+    nodePort: 30080
+  
+  volumes:
+    logs:
+      size: 5Gi
+      storageClass: standard
+    dags:
+      size: 1Gi
+      storageClass: standard
+
+# =================================================================
+# API (FastAPI)
+# =================================================================
+api:
+  enabled: true
+  replicas: 2
+  env:
+    MLFLOW_TRACKING_URI: "http://mlflow:5000"
+    MLFLOW_MODEL_NAME: "realtor_price_model"
+    RAW_DB_HOST: "postgres-raw"
+    RAW_DB_PORT: "5432"
+    RAW_DB_NAME: "mlops_raw"
+    RAW_DB_USER: "mlops"
+    RAW_DB_PASSWORD: "mlops123"
+    AWS_ACCESS_KEY_ID: "minioadmin"
+    AWS_SECRET_ACCESS_KEY: "minioadmin"
+    MLFLOW_S3_ENDPOINT_URL: "http://minio:9000"
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  service:
+    port: 8000
+    type: NodePort
+    nodePort: 30800
+  
+  # Health checks
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 10
+    periodSeconds: 5
+
+# =================================================================
+# Frontend (Streamlit)
+# =================================================================
+frontend:
+  enabled: true
+  replicas: 1
+  env:
+    API_URL: "http://api:8000"
+    MLFLOW_TRACKING_URI: "http://mlflow:5000"
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  service:
+    port: 8501
+    type: NodePort
+    nodePort: 30501
+
+# =================================================================
+# Observability - Prometheus
+# =================================================================
+prometheus:
+  enabled: true
+  replicas: 1
+  storage:
+    size: 5Gi
+    storageClass: standard
+  service:
+    port: 9090
+    type: NodePort
+    nodePort: 30909
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  
+  # Configuración de scraping
+  scrapeConfigs:
+    - job_name: 'mlops-api'
+      static_configs:
+        - targets: ['api:8000']
+    
+    - job_name: 'mlflow'
+      static_configs:
+        - targets: ['mlflow:5000']
+    
+    - job_name: 'airflow'
+      static_configs:
+        - targets: ['airflow:8080']
+
+# =================================================================
+# Observability - Grafana
+# =================================================================
+grafana:
+  enabled: true
+  replicas: 1
+  adminUser: admin
+  adminPassword: admin
+  
+  # ConfigMaps con dashboards precargados (BONO)
+  dashboards:
+    enabled: true
+    # Los dashboards se cargarán desde configmaps
+  
+  # Datasources
+  datasources:
+    - name: Prometheus
+      type: prometheus
+      url: http://prometheus:9090
+      access: proxy
+      isDefault: true
+  
+  storage:
+    size: 2Gi
+    storageClass: standard
+  
+  service:
+    port: 3000
+    type: NodePort
+    nodePort: 30300
+  
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "250m"
+
+# =================================================================
+# Configuración Global
+# =================================================================
+global:
+  storageClass: standard
+  imagePullPolicy: IfNotPresent
+
+# =================================================================
+# Configuración de Ingress (opcional)
+# =================================================================
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: mlops.local
+      paths:
+        - path: /
+          pathType: Prefix
+          service: frontend
+          port: 8501
+        - path: /api
+          pathType: Prefix
+          service: api
+          port: 8000
+        - path: /mlflow
+          pathType: Prefix
+          service: mlflow
+          port: 5000
+        - path: /airflow
+          pathType: Prefix
+          service: airflow
+          port: 8080
+  tls: []
+

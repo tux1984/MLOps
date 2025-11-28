@@ -55,7 +55,7 @@ services:
       POSTGRES_DB: ${RAW_DB_NAME}
     volumes:
       - postgres-raw-data:/var/lib/postgresql/data
-      - ./initdb/01_create_raw_db.sql:/docker-entrypoint-initdb.d/01_create_raw_db.sql
+      - ./initdb/01_create_raw_db_realtor.sql:/docker-entrypoint-initdb.d/01_create_raw_db.sql
     ports:
       - "5432:5432"
     healthcheck:
@@ -74,7 +74,7 @@ services:
       POSTGRES_DB: ${CLEAN_DB_NAME}
     volumes:
       - postgres-clean-data:/var/lib/postgresql/data
-      - ./initdb/02_create_clean_db.sql:/docker-entrypoint-initdb.d/02_create_clean_db.sql
+      - ./initdb/02_create_clean_db_realtor.sql:/docker-entrypoint-initdb.d/02_create_clean_db.sql
     ports:
       - "5433:5432"
     healthcheck:
@@ -295,7 +295,7 @@ services:
       - "8089:8089"
     depends_on:
       - api
-    command: -f /locust/locustfile.py --host=http://api:8000
+    command: ["locust", "-f", "/locust/locustfile.py", "--host=http://api:8000"]
 
 volumes:
   postgres-raw-data:

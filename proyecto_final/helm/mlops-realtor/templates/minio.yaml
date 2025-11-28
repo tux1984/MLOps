@@ -1,0 +1,135 @@
+{{- if .Values.minio.enabled -}}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.minio.storage.size }}
+  storageClassName: {{ .Values.minio.storage.storageClass }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: minio-init-script
+  namespace: {{ .Values.namespace }}
+data:
+  init-bucket.sh: |
+    #!/bin/sh
+    # Wait for MinIO to be ready
+    sleep 10
+    
+    # Configure mc (MinIO Client)
+    mc alias set myminio http://localhost:9000 {{ .Values.minio.accessKey }} {{ .Values.minio.secretKey }}
+    
+    # Create bucket if it doesn't exist (BONO requirement)
+    if ! mc ls myminio/{{ .Values.minio.bucketName }} > /dev/null 2>&1; then
+      mc mb myminio/{{ .Values.minio.bucketName }}
+      echo "Bucket {{ .Values.minio.bucketName }} created successfully"
+    else
+      echo "Bucket {{ .Values.minio.bucketName }} already exists"
+    fi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.minio.service.type }}
+  ports:
+    - name: api
+      port: {{ .Values.minio.service.apiPort }}
+      targetPort: 9000
+      {{- if eq .Values.minio.service.type "NodePort" }}
+      nodePort: {{ .Values.minio.service.apiNodePort }}
+      {{- end }}
+    - name: console
+      port: {{ .Values.minio.service.consolePort }}
+      targetPort: 9001
+      {{- if eq .Values.minio.service.type "NodePort" }}
+      nodePort: {{ .Values.minio.service.consoleNodePort }}
+      {{- end }}
+  selector:
+    app: minio
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio
+  template:
+    metadata:
+      labels:
+        app: minio
+    spec:
+      initContainers:
+        - name: create-bucket
+          image: minio/mc:latest
+          command: ["/bin/sh", "/scripts/init-bucket.sh"]
+          volumeMounts:
+            - name: init-script
+              mountPath: /scripts
+          env:
+            - name: MC_HOST_myminio
+              value: "http://minio:9000"
+      containers:
+        - name: minio
+          image: {{ .Values.images.minio.repository }}:{{ .Values.images.minio.tag }}
+          command:
+            - /bin/bash
+            - -c
+          args:
+            - minio server /data --console-address :9001
+          ports:
+            - containerPort: 9000
+              name: api
+            - containerPort: 9001
+              name: console
+          env:
+            - name: MINIO_ROOT_USER
+              value: {{ .Values.minio.accessKey }}
+            - name: MINIO_ROOT_PASSWORD
+              value: {{ .Values.minio.secretKey }}
+          volumeMounts:
+            - name: minio-storage
+              mountPath: /data
+          resources:
+            requests:
+              memory: {{ .Values.minio.resources.requests.memory }}
+              cpu: {{ .Values.minio.resources.requests.cpu }}
+            limits:
+              memory: {{ .Values.minio.resources.limits.memory }}
+              cpu: {{ .Values.minio.resources.limits.cpu }}
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: 9000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+      volumes:
+        - name: minio-storage
+          persistentVolumeClaim:
+            claimName: minio-pvc
+        - name: init-script
+          configMap:
+            name: minio-init-script
+            defaultMode: 0755
+{{- end }}
+
