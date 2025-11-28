@@ -375,6 +375,201 @@ GitOps para despliegue automático en Kubernetes.
 
 **Decisión técnica**: Argo CD garantiza que el cluster siempre refleje el estado definido en Git (GitOps).
 
+## Integración Continua y Despliegue Continuo (CI/CD)
+
+### Diferencia entre GitHub Actions y Docker Compose
+
+Es importante entender que GitHub Actions y Docker Compose cumplen roles complementarios pero diferentes en el ciclo de vida del proyecto:
+
+#### GitHub Actions (Construcción y Publicación)
+
+**Propósito**: Automatizar la construcción, pruebas y publicación de imágenes Docker cuando hay cambios en el código.
+
+**Responsabilidades**:
+- Se activa automáticamente con `git push` a las ramas main/master
+- Ejecuta tests unitarios y de integración
+- Realiza análisis estático de código (linting)
+- Ejecuta escaneo de seguridad de dependencias
+- **Construye** las imágenes Docker desde los Dockerfiles
+- **Publica** las imágenes construidas a DockerHub con etiquetas (latest, sha, versión)
+- Genera artefactos de build y reportes de tests
+
+**Lo que NO hace**:
+- No levanta servicios en ejecución
+- No expone puertos para acceso de usuarios
+- No ejecuta los DAGs de Airflow
+- No mantiene bases de datos persistentes
+- No proporciona acceso a interfaces web (Airflow UI, MLflow UI, etc.)
+
+**Ubicación de ejecución**: Servidores de GitHub (GitHub-hosted runners) o runners auto-hospedados
+
+#### Docker Compose (Orquestación y Ejecución)
+
+**Propósito**: Levantar, orquestar y mantener en ejecución todos los servicios del sistema en un entorno específico.
+
+**Responsabilidades**:
+- Descarga imágenes Docker desde DockerHub o las construye localmente
+- **Levanta** todos los contenedores definidos en `docker-compose.yml`
+- Crea y gestiona redes internas para comunicación entre servicios
+- Crea y monta volúmenes para persistencia de datos
+- **Expone puertos** en la máquina host (8080, 5000, 8501, etc.)
+- Conecta servicios entre sí (ej. API con PostgreSQL, MLflow con MinIO)
+- Mantiene los servicios corriendo y puede reiniciarlos automáticamente
+- Permite acceso a logs, shells de contenedores, y comandos de gestión
+
+**Lo que SÍ hace**:
+- Proporciona el entorno completo para desarrollo y testing
+- Permite ejecutar los DAGs de Airflow manualmente o programados
+- Mantiene bases de datos activas y accesibles
+- Expone interfaces web para interacción
+- Facilita debugging y desarrollo local
+
+**Ubicación de ejecución**: Tu máquina local, servidor de desarrollo, o servidor de producción
+
+### Flujo Completo de Desarrollo y Despliegue
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                    FASE 1: DESARROLLO                            │
+├──────────────────────────────────────────────────────────────────┤
+│  1. Desarrollador modifica código en dags/1_ingest_*.py         │
+│  2. Prueba localmente: docker-compose restart airflow-webserver  │
+│  3. Verifica funcionamiento en http://localhost:8080             │
+│  4. git commit -m "Mejorar DAG de ingesta"                       │
+│  5. git push origin main                                         │
+└──────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│              FASE 2: INTEGRACIÓN CONTINUA (CI)                   │
+├──────────────────────────────────────────────────────────────────┤
+│  GitHub Actions se activa automáticamente:                       │
+│                                                                   │
+│  ┌────────────────────────────────────────────────────┐         │
+│  │  Workflow: ci.yml                                  │         │
+│  │  - Checkout código                                 │         │
+│  │  - Instalar dependencias                           │         │
+│  │  - Ejecutar pytest (tests unitarios)               │         │
+│  │  - Ejecutar flake8 (linting)                       │         │
+│  │  - Ejecutar bandit (security scan)                 │         │
+│  │  ✓ PASS: Continuar a build                         │         │
+│  │  ✗ FAIL: Detener pipeline, notificar               │         │
+│  └────────────────────────────────────────────────────┘         │
+│                                                                   │
+│  ┌────────────────────────────────────────────────────┐         │
+│  │  Workflow: build-airflow.yml                       │         │
+│  │  - Construir imagen desde dags/Dockerfile.airflow  │         │
+│  │  - Etiquetar: usuario/airflow:latest               │         │
+│  │  - Etiquetar: usuario/airflow:sha-abc123           │         │
+│  │  - Push a DockerHub                                │         │
+│  │  ✓ Imagen disponible en DockerHub                  │         │
+│  └────────────────────────────────────────────────────┘         │
+│                                                                   │
+│  (Se repite para api, frontend, mlflow)                          │
+└──────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                       DockerHub Registry
+                  (Imágenes publicadas y versionadas)
+                              │
+                              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│         FASE 3: DESPLIEGUE CONTINUO (CD) - Opción A              │
+│                    Argo CD + Kubernetes                          │
+├──────────────────────────────────────────────────────────────────┤
+│  1. Argo CD monitorea el repositorio Git cada 3 minutos         │
+│  2. Detecta cambio en argocd/applications.yaml                  │
+│  3. Detecta nueva imagen en DockerHub (usuario/airflow:latest)  │
+│  4. Ejecuta: kubectl apply -f kubernetes/airflow.yaml           │
+│  5. Kubernetes pull la nueva imagen y actualiza pods            │
+│  6. Rollout automático sin downtime                             │
+│  ✓ Airflow actualizado en cluster Kubernetes                    │
+└──────────────────────────────────────────────────────────────────┘
+
+                              O
+
+┌──────────────────────────────────────────────────────────────────┐
+│         FASE 3: DESPLIEGUE CONTINUO (CD) - Opción B              │
+│                  Docker Compose Manual/Scripted                  │
+├──────────────────────────────────────────────────────────────────┤
+│  En tu máquina local o servidor:                                 │
+│                                                                   │
+│  1. docker-compose pull airflow-webserver                        │
+│     (Descarga última imagen desde DockerHub)                     │
+│  2. docker-compose up -d airflow-webserver                       │
+│     (Reinicia servicio con nueva imagen)                         │
+│  ✓ Airflow actualizado localmente                                │
+└──────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│              FASE 4: EJECUCIÓN Y OPERACIÓN                       │
+├──────────────────────────────────────────────────────────────────┤
+│  Docker Compose mantiene servicios corriendo:                    │
+│                                                                   │
+│  - Airflow UI accesible en http://localhost:8080                │
+│  - MLflow UI accesible en http://localhost:5000                 │
+│  - API REST accesible en http://localhost:8000                  │
+│  - Frontend Streamlit en http://localhost:8501                  │
+│  - Bases de datos PostgreSQL activas                            │
+│  - Prometheus/Grafana monitoreando                              │
+│                                                                   │
+│  El equipo puede:                                                │
+│  - Ejecutar DAGs manualmente desde Airflow UI                   │
+│  - Consultar métricas en MLflow                                 │
+│  - Hacer predicciones desde API o Frontend                      │
+│  - Monitorear performance en Grafana                            │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+### Casos de Uso Específicos
+
+#### Desarrollo Local
+**Herramienta**: Docker Compose únicamente
+- Se levantan todos los servicios con `docker-compose up -d`
+- Se desarrollan y prueban cambios localmente
+- No se necesita GitHub Actions aún
+- Los builds de imágenes son locales y rápidos
+
+#### Trabajo en Equipo
+**Herramientas**: GitHub Actions + Docker Compose
+- Cada desarrollador usa Docker Compose localmente
+- Al hacer push, GitHub Actions valida el código automáticamente
+- Construye imágenes centralizadas en DockerHub
+- Todo el equipo puede ejecutar `docker-compose pull` para obtener la última versión
+- Se garantiza que todos usan imágenes consistentes
+
+#### Producción con Kubernetes
+**Herramientas**: GitHub Actions + Argo CD + Kubernetes
+- GitHub Actions construye y publica imágenes
+- Argo CD detecta cambios automáticamente
+- Kubernetes ejecuta los pods con las nuevas imágenes
+- Docker Compose solo se usa para desarrollo local
+- Escalado automático y alta disponibilidad
+
+### Cuándo Usar Cada Herramienta
+
+| Escenario | GitHub Actions | Docker Compose | Argo CD |
+|-----------|----------------|----------------|---------|
+| Desarrollo individual local | No | **Sí** | No |
+| Pruebas antes de commit | No | **Sí** | No |
+| Validar código en PR | **Sí** | No | No |
+| Construir imágenes para equipo | **Sí** | No | No |
+| Desplegar en servidor de desarrollo | No | **Sí** | Opcional |
+| Desplegar en staging/producción | **Sí** | No | **Sí** |
+| Rollback a versión anterior | No | Manual | **Sí** |
+| Escalado horizontal | No | No | **Sí** |
+
+### Resumen
+
+**GitHub Actions** es la **fábrica automatizada**: construye, prueba y empaqueta el software, pero no lo ejecuta para uso final.
+
+**Docker Compose** es el **entorno de ejecución**: toma las imágenes (de DockerHub o locales) y las pone a correr para que puedan ser utilizadas.
+
+**Argo CD** es el **operador de despliegue**: toma las imágenes de DockerHub y las despliega automáticamente en Kubernetes siguiendo las definiciones en Git.
+
+Todos son necesarios para un pipeline MLOps completo, pero cada uno tiene su rol específico en diferentes etapas del ciclo de vida del software.
+
 ## Decisiones de Diseño
 
 ### Arquitectura de Microservicios
@@ -391,7 +586,7 @@ Cuatro bases de datos PostgreSQL separadas por:
 - Seguridad: permisos específicos por base
 
 ### LocalExecutor en Airflow
-Se usa LocalExecutor en lugar de CeleryExecutor por:
+Se utiliza LocalExecutor en lugar de CeleryExecutor por:
 - Simplicidad de configuración
 - Suficiente para volúmenes moderados de datos
 - Menor overhead de infraestructura
@@ -411,7 +606,7 @@ El feature engineering se ejecuta en Airflow y no en API porque:
 - La API se mantiene liviana y rápida
 
 ### SHAP para Explicabilidad
-SHAP (SHapley Additive exPlanations) se usa para:
+SHAP (SHapley Additive exPlanations) se utiliza para:
 - Interpretabilidad a nivel de instancia
 - Explicar por qué el modelo predijo cierto precio
 - Confianza del usuario en predicciones

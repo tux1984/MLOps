@@ -4,7 +4,7 @@ Esta guía proporciona instrucciones paso a paso para desplegar y probar el sist
 
 ## Requisitos Previos
 
-Antes de comenzar, asegúrate de tener instalado:
+Antes de comenzar, el usuario debe asegurarse de tener instalado:
 
 - Docker 20.10+ y Docker Compose 2.0+
 - 8 GB de RAM disponibles
@@ -22,7 +22,7 @@ docker-compose --version
 
 ### 1. Configurar Variables de Entorno
 
-Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
+El usuario debe crear un archivo `.env` en la raíz del proyecto con las siguientes variables:
 
 ```bash
 # Configuración de PostgreSQL
@@ -75,54 +75,54 @@ MINIO_CONSOLE_PORT=9001
 
 ### 2. Verificar la API Externa
 
-Antes de iniciar, verifica que la API del profesor esté disponible:
+Antes de iniciar, el usuario debe verificar que la API de datos esté disponible:
 
 ```bash
 curl http://10.43.100.103:8000/health
 ```
 
-Si la API no está disponible, el DAG de ingesta fallará. Contacta al profesor o actualiza la URL en `.env`.
+Si la API no está disponible, el DAG de ingesta fallará.
 
 ## Flujo de Ejecución Completo
 
 ### Paso 1: Levantar Infraestructura Base
 
-Inicia las bases de datos y servicios de almacenamiento:
+El usuario debe iniciar las bases de datos y servicios de almacenamiento:
 
 ```bash
 docker-compose up -d postgres-raw postgres-clean postgres-airflow postgres-mlflow minio
 ```
 
-Espera aproximadamente 30 segundos para que las bases de datos estén listas. Verifica el estado:
+Se debe esperar aproximadamente 30 segundos para que las bases de datos estén listas. Para verificar el estado:
 
 ```bash
 docker-compose ps
 ```
 
-Deberías ver 5 servicios con estado "Up".
+Se deberían observar 5 servicios con estado "Up".
 
 ### Paso 2: Iniciar MLflow y Airflow
 
-Levanta los servicios de orquestación y tracking:
+Se deben levantar los servicios de orquestación y tracking:
 
 ```bash
 docker-compose up -d mlflow airflow-webserver
 ```
 
-Espera 1-2 minutos para que Airflow complete su inicialización. Verifica acceso:
+Se debe esperar 1-2 minutos para que Airflow complete su inicialización. Para verificar el acceso:
 
 - Airflow: http://localhost:8080 (usuario: admin, contraseña: admin)
 - MLflow: http://localhost:5000
 
 ### Paso 3: Ejecutar DAG de Ingesta
 
-Desde la interfaz de Airflow (http://localhost:8080):
+Desde la interfaz de Airflow (http://localhost:8080), el usuario debe:
 
-1. Ve a la sección "DAGs"
-2. Busca el DAG `1_ingest_from_external_api`
-3. Activa el toggle (ON) en la columna izquierda
-4. Haz clic en el botón "Trigger DAG" (play button)
-5. Monitorea el progreso en la vista "Graph"
+1. Ir a la sección "DAGs"
+2. Buscar el DAG `1_ingest_from_external_api`
+3. Activar el toggle (ON) en la columna izquierda
+4. Hacer clic en el botón "Trigger DAG" (play button)
+5. Monitorear el progreso en la vista "Graph"
 
 El DAG tomará aproximadamente 5-10 minutos dependiendo del volumen de datos.
 
@@ -133,14 +133,14 @@ El DAG tomará aproximadamente 5-10 minutos dependiendo del volumen de datos.
 docker exec -it postgres-raw psql -U mlops -d mlops_raw -c "SELECT COUNT(*) FROM raw_train;"
 ```
 
-Deberías ver registros insertados (ej. 1000+ registros).
+Se deberían observar registros insertados (ej. 1000+ registros).
 
 ### Paso 4: Ejecutar DAG de Preprocesamiento
 
-Una vez completado el DAG de ingesta:
+Una vez completado el DAG de ingesta, el usuario debe:
 
-1. En Airflow, busca el DAG `2_clean_build`
-2. Actívalo y ejecútalo manualmente (Trigger DAG)
+1. En Airflow, buscar el DAG `2_clean_build`
+2. Activarlo y ejecutarlo manualmente (Trigger DAG)
 3. Este DAG tomará 3-5 minutos
 
 El DAG aplicará feature engineering y normalizará los datos.
@@ -152,35 +152,35 @@ El DAG aplicará feature engineering y normalizará los datos.
 docker exec -it postgres-clean psql -U mlops -d mlops_clean -c "SELECT COUNT(*) FROM clean_train;"
 ```
 
-Deberías ver el mismo número de registros con 30+ columnas.
+Se debería observar el mismo número de registros con 30+ columnas.
 
 ### Paso 5: Ejecutar DAG de Entrenamiento
 
-Con los datos limpios disponibles:
+Con los datos limpios disponibles, el usuario debe:
 
-1. En Airflow, busca el DAG `3_train_and_register`
-2. Actívalo y ejecútalo manualmente
+1. En Airflow, buscar el DAG `3_train_and_register`
+2. Activarlo y ejecutarlo manualmente
 3. Este DAG tomará 10-15 minutos (entrena 3 modelos)
 
 El mejor modelo será promovido automáticamente a stage "Production" en MLflow.
 
 **Validación**:
 
-Ve a MLflow (http://localhost:5000):
+El usuario debe acceder a MLflow (http://localhost:5000) y:
 
-1. Haz clic en "Models" en la barra superior
-2. Deberías ver el modelo registrado (ej. "realtor_model")
-3. Haz clic en el modelo y verifica que hay una versión en stage "Production"
+1. Hacer clic en "Models" en la barra superior
+2. Se debería observar el modelo registrado (ej. "realtor_model")
+3. Hacer clic en el modelo y verificar que hay una versión en stage "Production"
 
 ### Paso 6: Levantar API y Frontend
 
-Ahora que hay un modelo en producción, levanta los servicios de inferencia:
+Ahora que hay un modelo en producción, se deben levantar los servicios de inferencia:
 
 ```bash
 docker-compose up -d api frontend
 ```
 
-Espera 30-60 segundos para que carguen. Verifica acceso:
+Se debe esperar 30-60 segundos para que carguen. Para verificar el acceso:
 
 - API: http://localhost:8000
 - Frontend: http://localhost:8501
@@ -195,21 +195,21 @@ curl http://localhost:8000/health
 curl http://localhost:8000/model-info
 ```
 
-Deberías ver respuestas JSON con status 200.
+Se deberían observar respuestas JSON con status 200.
 
 **Validación de Frontend**:
 
-1. Abre http://localhost:8501 en tu navegador
+1. Abrir http://localhost:8501 en el navegador
 2. Debería aparecer la interfaz con 4 tabs
-3. En el sidebar, verifica que muestre "API Status: Connected"
-4. Verifica que muestre información del modelo en producción
+3. En el sidebar, verificar que muestre "API Status: Connected"
+4. Verificar que muestre información del modelo en producción
 
 ### Paso 7: Realizar Predicción
 
 #### Opción A: Desde el Frontend (Recomendado)
 
-1. Ve a http://localhost:8501
-2. En el Tab 1 "Predicción Individual", completa el formulario:
+1. Acceder a http://localhost:8501
+2. En el Tab 1 "Predicción Individual", completar el formulario:
    - Brokered By: Century 21
    - Status: for_sale
    - Bed: 3
@@ -221,8 +221,8 @@ Deberías ver respuestas JSON con status 200.
    - Zip Code: 33101
    - House Size: 1500
    - Previous Sold Date: 2020-01-15
-3. Haz clic en "Predecir Precio"
-4. Verifica que muestre un precio estimado
+3. Hacer clic en "Predecir Precio"
+4. Verificar que muestre un precio estimado
 
 #### Opción B: Desde la API (curl)
 
@@ -257,32 +257,32 @@ Respuesta esperada:
 
 ### Paso 8: Explorar Explicabilidad SHAP
 
-1. En el Frontend, ve al Tab 3 "Explicabilidad SHAP"
-2. Completa el formulario con los mismos datos del paso 7
-3. Haz clic en "Generar Explicación"
-4. Verifica que aparezcan:
+1. En el Frontend, acceder al Tab 3 "Explicabilidad SHAP"
+2. Completar el formulario con los mismos datos del paso 7
+3. Hacer clic en "Generar Explicación"
+4. Verificar que aparezcan:
    - Gráfico Waterfall (top 15 features más importantes)
    - Gráfico Force (impacto positivo/negativo)
    - Tabla con valores SHAP ordenados
 
-Esto te permite entender qué features contribuyeron más a la predicción.
+Esto permite comprender qué features contribuyeron más a la predicción.
 
 ### Paso 9: Monitorear con Grafana
 
-Levanta los servicios de observabilidad:
+Se deben levantar los servicios de observabilidad:
 
 ```bash
 docker-compose up -d prometheus grafana
 ```
 
-Accede a Grafana:
+Para acceder a Grafana, el usuario debe:
 
-1. Ve a http://localhost:3000
+1. Ir a http://localhost:3000
 2. Usuario: admin, Contraseña: admin
-3. Si pide cambiar contraseña, puedes saltarlo
-4. Ve a "Configuration" → "Data Sources"
-5. Verifica que Prometheus esté configurado (http://prometheus:9090)
-6. Ve a "Dashboards" → "Browse" y explora los dashboards predefinidos
+3. Si solicita cambiar contraseña, se puede omitir
+4. Ir a "Configuration" → "Data Sources"
+5. Verificar que Prometheus esté configurado (http://prometheus:9090)
+6. Ir a "Dashboards" → "Browse" y explorar los dashboards predefinidos
 
 **Métricas disponibles**:
 
@@ -293,21 +293,21 @@ Accede a Grafana:
 
 ### Paso 10: Pruebas de Carga con Locust
 
-Levanta Locust para simular tráfico:
+Se debe levantar Locust para simular tráfico:
 
 ```bash
 docker-compose up -d locust
 ```
 
-Accede a Locust:
+Para acceder a Locust, el usuario debe:
 
-1. Ve a http://localhost:8089
-2. Configura:
+1. Ir a http://localhost:8089
+2. Configurar:
    - Number of users: 10
    - Spawn rate: 2
    - Host: http://api:8000
-3. Haz clic en "Start swarming"
-4. Monitorea las métricas en tiempo real:
+3. Hacer clic en "Start swarming"
+4. Monitorear las métricas en tiempo real:
    - RPS (Requests Per Second)
    - Response Time (ms)
    - Failure Rate
@@ -316,7 +316,7 @@ Accede a Locust:
 
 **Validación**:
 
-Mientras Locust está ejecutándose, ve a Grafana y observa cómo aumentan las métricas de la API.
+Mientras Locust está ejecutándose, el usuario debe ir a Grafana y observar cómo aumentan las métricas de la API.
 
 ## Comandos Útiles
 
@@ -529,7 +529,7 @@ docker-compose up -d airflow-webserver mlflow
 
 ## Checklist de Validación End-to-End
 
-Usa este checklist para verificar que todo funciona correctamente:
+El usuario puede utilizar este checklist para verificar que todo funciona correctamente:
 
 - [ ] **Infraestructura Base**
   - [ ] 4 bases de datos PostgreSQL levantadas y accesibles
@@ -574,7 +574,7 @@ Usa este checklist para verificar que todo funciona correctamente:
 
 ## Notas sobre Kubernetes
 
-Si deseas desplegar en Kubernetes en lugar de Docker Compose:
+Si se desea desplegar en Kubernetes en lugar de Docker Compose:
 
 1. **Crear el namespace**:
 
@@ -637,28 +637,303 @@ kubectl port-forward -n mlops svc/api 8000:8000
 kubectl port-forward -n mlops svc/frontend 8501:8501
 ```
 
-**Nota**: Los manifiestos de Kubernetes asumen que tienes un cluster funcional. Para desarrollo local, considera usar Minikube o Kind.
+**Nota**: Los manifiestos de Kubernetes asumen que el usuario tiene un cluster funcional. Para desarrollo local, se recomienda usar Minikube o Kind.
+
+## Monitoreo de GitHub Actions (CI/CD)
+
+### ¿Qué son los GitHub Actions y para qué sirven?
+
+GitHub Actions **NO reemplazan** Docker Compose. Son herramientas complementarias:
+
+- **GitHub Actions**: Construye y publica imágenes Docker automáticamente cuando se hace `git push`
+- **Docker Compose**: Levanta y ejecuta los servicios en la máquina local o servidor
+
+**Analogía**: GitHub Actions es una fábrica que construye productos (imágenes Docker), mientras que Docker Compose es el lugar donde se usan esos productos (ejecuta los contenedores).
+
+### ¿Cuándo se ejecutan los workflows?
+
+Los workflows de GitHub Actions se activan automáticamente cuando:
+
+1. Se hace `git push` a las ramas `main` o `master`
+2. Se crea o actualiza un Pull Request
+3. Se modifican archivos específicos (ej. `dags/**`, `services/api/**`)
+
+### Cómo Ver las Ejecuciones de GitHub Actions
+
+Si el proyecto está en GitHub, se puede monitorear las ejecuciones de los workflows:
+
+#### Paso 1: Acceder a la Pestaña Actions
+
+1. Acceder al repositorio en GitHub: `https://github.com/usuario/proyecto-final-mlops`
+2. Hacer clic en la pestaña **"Actions"** en la parte superior
+3. Se observará una lista de todas las ejecuciones recientes
+
+#### Paso 2: Explorar una Ejecución Específica
+
+1. Hacer clic en cualquier ejecución de la lista (ej. "Build Airflow Image")
+2. Se observará el estado:
+   - ✅ **Verde (Success)**: La imagen se construyó y publicó correctamente
+   - ❌ **Rojo (Failure)**: Hubo errores en build, tests o linting
+   - 🟡 **Amarillo (In Progress)**: Aún está ejecutándose
+   - ⚪ **Gris (Cancelled)**: Se canceló manualmente
+
+3. Hacer clic en el nombre del job (ej. "build")
+4. Se desplegará cada paso del workflow:
+   - Checkout code
+   - Set up Docker Buildx
+   - Login to DockerHub
+   - Build and push
+   - etc.
+
+5. Hacer clic en cualquier paso para ver los logs detallados
+
+#### Paso 3: Verificar Imágenes Publicadas en DockerHub
+
+Después de una ejecución exitosa:
+
+1. Acceder a DockerHub: `https://hub.docker.com/r/usuario/`
+2. Se deberían observar los repositorios:
+   - `usuario/proyecto-final-airflow`
+   - `usuario/proyecto-final-api`
+   - `usuario/proyecto-final-frontend`
+   - `usuario/proyecto-final-mlflow`
+
+3. Hacer clic en uno de los repositorios
+4. En la pestaña "Tags", se observarán las etiquetas:
+   - `latest`: Última versión construida
+   - `sha-abc123`: Versión específica del commit
+
+#### Paso 4: Usar las Imágenes Publicadas
+
+Para usar las imágenes construidas por GitHub Actions en el `docker-compose.yml`:
+
+```yaml
+# Antes (build local)
+services:
+  airflow-webserver:
+    build:
+      context: ./dags
+      dockerfile: Dockerfile.airflow
+
+# Después (usar imagen de DockerHub)
+services:
+  airflow-webserver:
+    image: usuario/proyecto-final-airflow:latest
+```
+
+Luego se debe ejecutar:
+
+```bash
+# Descargar última imagen desde DockerHub
+docker-compose pull airflow-webserver
+
+# Reiniciar con la nueva imagen
+docker-compose up -d airflow-webserver
+```
+
+### Qué Validan los Workflows
+
+Cada workflow ejecuta diferentes validaciones:
+
+#### Workflow CI (`ci.yml`)
+**Se ejecuta en**: Todos los pushes y PRs
+
+**Validaciones**:
+```bash
+# 1. Tests unitarios
+pytest tests/ --cov --cov-report=xml
+
+# 2. Linting de código (estilo)
+flake8 dags/ services/ --max-line-length=120
+
+# 3. Escaneo de seguridad
+bandit -r dags/ services/ -f json -o bandit-report.json
+
+# 4. Verificación de tipos (opcional)
+mypy dags/ --ignore-missing-imports
+```
+
+**Si falla**: No se construyen las imágenes Docker
+
+#### Workflows de Build (Airflow, API, Frontend, MLflow)
+**Se ejecuta en**: Pushes a main/master que modifican archivos relevantes
+
+**Acciones**:
+```bash
+# 1. Construir imagen Docker
+docker build -t usuario/proyecto-final-airflow:latest -f dags/Dockerfile.airflow .
+
+# 2. Etiquetar con SHA del commit
+docker tag usuario/proyecto-final-airflow:latest usuario/proyecto-final-airflow:sha-abc123
+
+# 3. Publicar a DockerHub
+docker push usuario/proyecto-final-airflow:latest
+docker push usuario/proyecto-final-airflow:sha-abc123
+```
+
+**Si falla**: La imagen no se publica, el equipo no podrá usar la nueva versión
+
+### Configurar Secrets en GitHub
+
+Para que los workflows funcionen, el usuario debe configurar secrets:
+
+1. Acceder al repositorio en GitHub
+2. Settings → Secrets and variables → Actions
+3. Hacer clic en "New repository secret"
+4. Agregar estos secrets:
+
+   - **DOCKERHUB_USERNAME**: Usuario de DockerHub
+   - **DOCKERHUB_TOKEN**: Token de acceso de DockerHub
+     - Para crear el token: DockerHub → Account Settings → Security → New Access Token
+
+### Troubleshooting de GitHub Actions
+
+#### Problema: Workflow falla en "Login to DockerHub"
+
+**Causa**: Secrets no configurados o incorrectos
+
+**Solución**:
+```bash
+# Verificar que los secrets existan
+# Settings → Secrets and variables → Actions
+
+# Crear nuevo token en DockerHub si es necesario
+# DockerHub → Account Settings → Security → New Access Token
+```
+
+#### Problema: Workflow falla en tests
+
+**Causa**: Código con errores de sintaxis o tests que no pasan
+
+**Solución**:
+```bash
+# Ejecutar tests localmente antes de push
+cd proyecto_final
+pip install -r tests/requirements.txt
+pytest tests/ -v
+
+# Corregir errores y volver a hacer commit
+```
+
+#### Problema: Workflow falla en build de imagen
+
+**Causa**: Dockerfile con errores o dependencias no disponibles
+
+**Solución**:
+```bash
+# Probar build localmente
+docker build -t test-airflow -f dags/Dockerfile.airflow .
+
+# Ver logs detallados
+docker build --progress=plain -t test-airflow -f dags/Dockerfile.airflow .
+```
+
+#### Problema: Workflow queda "stuck" en ejecución
+
+**Causa**: Comando bloqueante o timeout largo
+
+**Solución**:
+```bash
+# Cancelar la ejecución desde GitHub UI
+# Actions → Click en la ejecución → Cancel workflow
+
+# Revisar el último paso donde se quedó
+# Ajustar timeouts en el workflow si es necesario
+```
+
+### Comandos Útiles para CI/CD
+
+```bash
+# Ver historial de imágenes locales
+docker images | grep proyecto-final
+
+# Limpiar imágenes antiguas
+docker image prune -a
+
+# Descargar última versión de todas las imágenes
+docker-compose pull
+
+# Reconstruir y reiniciar todos los servicios
+docker-compose up -d --build
+
+# Ver qué imagen está usando cada contenedor
+docker-compose ps --format "table {{.Name}}\t{{.Image}}\t{{.Status}}"
+
+# Forzar recreación de contenedores con nueva imagen
+docker-compose up -d --force-recreate
+```
+
+### Flujo Recomendado de Trabajo
+
+1. **Desarrollo local**: Realizar cambios en el código
+2. **Prueba local**: `docker-compose restart <servicio>` para probar
+3. **Commit y push**: `git add . && git commit -m "mensaje" && git push`
+4. **Monitorear Actions**: Acceder a GitHub Actions y verificar que pase
+5. **Esperar publicación**: Esperar a que la imagen se publique en DockerHub (2-5 min)
+6. **Actualizar localmente**: `docker-compose pull <servicio> && docker-compose up -d <servicio>`
+7. **Validar cambios**: Verificar que los cambios funcionen correctamente
+
+### Diferencia Clave: Build vs Run
+
+```
+╔═══════════════════════════════════════════════════════════════╗
+║                      GitHub Actions                           ║
+║  ┌────────────────────────────────────────────────────┐      ║
+║  │  FASE: BUILD (Construcción)                        │      ║
+║  │  - Toma código fuente                              │      ║
+║  │  - Ejecuta tests                                   │      ║
+║  │  - Construye imagen Docker                         │      ║
+║  │  - Publica a DockerHub                             │      ║
+║  │  OUTPUT: Imagen lista para usar                    │      ║
+║  └────────────────────────────────────────────────────┘      ║
+╚═══════════════════════════════════════════════════════════════╝
+                           │
+                           │ docker pull
+                           ▼
+╔═══════════════════════════════════════════════════════════════╗
+║                      Docker Compose                           ║
+║  ┌────────────────────────────────────────────────────┐      ║
+║  │  FASE: RUN (Ejecución)                             │      ║
+║  │  - Descarga imagen de DockerHub                    │      ║
+║  │  - Crea contenedor                                 │      ║
+║  │  - Expone puertos                                  │      ║
+║  │  - Monta volúmenes                                 │      ║
+║  │  - Conecta a redes                                 │      ║
+║  │  - MANTIENE SERVICIO CORRIENDO                     │      ║
+║  │  OUTPUT: Servicio accesible en http://localhost    │      ║
+║  └────────────────────────────────────────────────────┘      ║
+╚═══════════════════════════════════════════════════════════════╝
+```
+
+**Analogía Final**:
+- **GitHub Actions**: Fábrica de coches (construye el producto)
+- **DockerHub**: Concesionario (almacena los productos)
+- **Docker Compose**: Conductor (usa el coche para ir a lugares)
+
+No se puede conducir un coche que solo está en la fábrica, y no se puede construir un coche nuevo cada vez que se desee ir a algún lugar. Ambos son necesarios pero en diferentes momentos.
 
 ## Próximos Pasos
 
-Una vez que hayas completado esta guía, puedes:
+Una vez completada esta guía, el usuario puede:
 
 1. **Explorar MLflow**: Revisar experimentos, comparar modelos, analizar métricas
 2. **Personalizar dashboards de Grafana**: Crear alertas y visualizaciones custom
 3. **Optimizar modelos**: Modificar hiperparámetros en el DAG de entrenamiento
 4. **Agregar features**: Implementar nuevas transformaciones en el DAG de preprocesamiento
 5. **Implementar A/B testing**: Tener dos versiones de modelo en Staging y Production
-6. **Configurar CI/CD**: Conectar GitHub Actions con tu repositorio para deployments automáticos
+6. **Configurar CI/CD**: Conectar GitHub Actions con el repositorio para deployments automáticos
 7. **Explorar Argo CD**: Desplegar en Kubernetes con GitOps
+8. **Monitorear GitHub Actions**: Configurar notificaciones de Slack/Email cuando los builds fallen
+9. **Implementar workflow de release**: Crear tags y releases automáticas cuando se actualice la versión
 
 ## Soporte
 
-Si encuentras problemas no cubiertos en esta guía:
+Si se encuentran problemas no cubiertos en esta guía:
 
-1. Revisa los logs detallados de cada servicio
-2. Consulta la documentación adicional en `docs/`
-3. Revisa el archivo `COMPONENTES_IMPLEMENTADOS.md` para detalles técnicos
-4. Contacta al equipo del proyecto
+1. Revisar los logs detallados de cada servicio
+2. Consultar la documentación adicional en `docs/`
+3. Revisar el archivo `COMPONENTES_IMPLEMENTADOS.md` para detalles técnicos
+4. Contactar al equipo del proyecto
 
 ---
 
